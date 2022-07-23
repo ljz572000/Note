@@ -1,5 +1,13 @@
 # Java 并发编程
 
+<style>
+h1 { font: 40px song !important; }
+h2 { font: 32px song !important; }
+h3 { font: 28px song !important; }
+p { font: 16px kai !important; }
+li { font: 16px kai !important; }
+</style>
+
 ## 1.1
 
 <br/>
@@ -32,7 +40,7 @@ Condition 可以有多个
 
 <br/>
 
-**可重入**：同一线程对某一锁多次加锁不会产生死锁
+<strong>可重入</strong>：同一线程对某一锁多次加锁不会产生死锁
 
 例如:
 
@@ -60,7 +68,11 @@ lock.unlock();
 
 ⚫ 而且写和读没有通过同步来排序。 
 
+<br/>
+
 **顺序一致性内存模型**有两大特性
+
+<br/>
 
 ⚫ 一个线程中的所有操作必须按照程序的顺序来执行。 
 
@@ -374,7 +386,18 @@ JMM 决定一个线程对共享变量的写入何时对另一个线程可见。
 
 * volatile 读与锁的获取有相同的内存语义。
 
+<br/>
+
 ### 3.4.4 volatile 内存语义的实现
 
 <img src="./images/3-5.png" />
 
+从表3-5我们可以看出 。 
+
+当 **第二个操作是volatile写**时 ， 不 管 第 一 个 操 作 是 什 么 ， 都 不 能 重 排 序 。 
+
+这 个 规 则 确 保 volatile 写 之 前 的 操 作 不 会 被 编 译 器 重 排 序 到 volatile 写 之 后 。
+
+当 第 一 个 操 作 是 volatile 读 时 ， 不 管 第 二 个 操 作 是 什 么 ， 都 不 能 重 排 序 。 这 个 规 
+则 确 保 volatile 读 之 后 的 操 作 不 会 被 编 译 器 重 排 序 到 volatile 读 之 前 。 
+当 第 一 个 操 作 是 volatile 写 ， 第 二 个 操 作 是 volatile 读 时 ， 不 能 重 排 序 。 
