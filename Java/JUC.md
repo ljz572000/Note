@@ -1,12 +1,6 @@
 # Java 并发编程
 
-<style>
-h1 { font: 40px song !important; }
-h2 { font: 32px song !important; }
-h3 { font: 28px song !important; }
-p { font: 16px kai !important; }
-li { font: 16px kai !important; }
-</style>
+
 
 ## 1.1
 
