@@ -523,7 +523,7 @@ JDK 文档对该方法的说明如下：**如果当前状态值等于预期值�
 
 从本文对 ReentrantLock 的分析可以看出，
 
-<mark>锁释放-获取的内存语义的实现至少有下面两种方式</mark>。 
+<mark style="background-color: red;">锁释放-获取的内存语义的实现至少有下面两种方式</mark>。 
 
 1. **利用 volatile 变量的写-读所具有的内存语义**。 
 
