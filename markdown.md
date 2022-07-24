@@ -18,3 +18,5 @@
 > 需要令牌“Warning”在其他語言中看起來很糟糕。
 
 > 🚫 Do not feed the dragons 
+
+The background color should be `#ffffff` for light mode and `#0d1117` for dark mode.
