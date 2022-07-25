@@ -570,6 +570,8 @@ JDK 文档对该方法的说明如下：**如果当前状态值等于预期值�
 
 从整体来看，concurrent 包的实现示意图如 3-28 所示。 
 
+<img src="./images/3-28.png"/>
+
 <br>
 
 ## 3.6 final 域的内存语义 
@@ -636,3 +638,57 @@ JDK 文档对该方法的说明如下：**如果当前状态值等于预期值�
 本文将分析双重检查锁定的错误根源，以及两种线程安全的延迟初始化方案。 
 
 在 Java 程序中，有时候可能需要推迟一些高开销的对象初始化操作，并且只有在使用这些对象时才进行初始化。此时，程序员可能会采用延迟初始化。 
+
+
+```java
+public class SafeLazyInitialization{
+    private static Instance instance;
+
+    public synchronized static Instance getInstance(){
+        if(instance == null){
+            instance = new Instance();
+        }
+        return instance;
+    }
+}
+```
+
+> ⚠️ 
+> 
+> 由于对 getInstance()方法做了同步处理，synchronized 将导致性能开销。
+> 
+> 如果 getInstance()方法被多个线程频繁的调用，将会导致程序执行性能的下降。
+> 
+> 反之，如果 getInstance()方法不会被多个线程频繁的调用，那么这个延迟初始化方案将能提供令人满意的性能。
+
+因此，人们想出了一个“聪明”的技巧：双重检查锁定（Double-Checked Locking）。人们想通过双重检查锁定来降低同步的开销。
+
+
+```java
+public class DoubleCheckedLocking{
+    private static Instance instance;
+
+    public static Instance getInstance(){
+        if(instance == null){// 第一次检查
+            synchronized (DoubleCheckedLocking.class){// 加锁
+                if(instance == null){// 第二次检查
+                    instance = new Instance();// 问题的根源出现在这里
+                }
+            }
+        }
+        return instance;
+    }
+}
+```
+
+如上面代码所示，如果第一次检查 instance 不为 null，那么就不需要执行下面的加锁和初始化操作。
+因此，可以大幅降低 synchronized 带来的性能开销。
+
+> ⚠️ 
+> 
+> 上面代码表面上看起来，似乎两全其美。 
+> 
+>1. 多个线程试图在同一时间创建对象时，会通过加锁来保证只有一个线程能创建对象。 
+> 
+> 2. 在对象创建好之后，执行 getInstance()方法将不需要获取锁，直接返回已创建好的对象。
+
