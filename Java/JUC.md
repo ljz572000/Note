@@ -456,6 +456,7 @@ AQS 使用一个整型的 volatile 变量（命名为 state）来维护同步状
 
 <img src="./images/3-5-3.png">
 
+<br>
 
 ReentrantLock 分为**公平锁**和**非公平锁**，我们首先分析公平锁。使用公平锁时，加锁方法 lock()调用轨迹如下。
 
@@ -484,6 +485,9 @@ ReentrantLock 分为**公平锁**和**非公平锁**，我们首先分析公平�
 
 从上面的源代码可以看出，**在释放锁的最后写 volatile 变量 state**。
 
+<br>
+
+
 公平锁在释放锁的最后写volatile变量state，在获取锁时首先读这个volatile变量。
 
 根据volatile的happens-before 规则，释放锁的线程在写volatile变量之前可见的共享变量，
@@ -499,9 +503,15 @@ ReentrantLock 分为**公平锁**和**非公平锁**，我们首先分析公平�
 
 在第 3 步真正开始加锁，下面是该方法的源代码。 
 
+<br>
+
 <img src="./images/3-5-4.png">
 
+<br>
+
 该方法以原子操作的方式更新 state 变量，本文把 Java 的 compareAndSet()方法调用 简称为 CAS。
+
+<br>
 
 JDK 文档对该方法的说明如下：**如果当前状态值等于预期值，则以原子方式将同步状态设置为给定的更新值。此操作具有 volatile 读和写的内存语义**。
 
@@ -523,10 +533,37 @@ JDK 文档对该方法的说明如下：**如果当前状态值等于预期值�
 
 从本文对 ReentrantLock 的分析可以看出，
 
-<mark >锁释放-获取的内存语义的实现至少有下面两种方式</mark>。 
+> ℹ️ 锁释放-获取的内存语义的实现至少有下面两种方式
+> 1. **利用 volatile 变量的写-读所具有的内存语义**。 
+> 2. **利用 CAS 所附带的 volatile 读和 volatile 写的内存语义**。
 
-1. **利用 volatile 变量的写-读所具有的内存语义**。 
 
-2. **利用 CAS 所附带的 volatile 读和 volatile 写的内存语义**。
+### 3.5.4 concurrent 包的实现 
 
+由于Java的CAS同时具有 volatile 读和 volatile 写的内存语义，因此 Java 线程之间 的通信现在有了下面 4 种方式。 
+
+1. A 线程写 volatile 变量，随后 B 线程读这个 volatile 变量。 
+
+2. A 线程写 volatile 变量，随后 B 线程用 CAS 更新这个 volatile 变量。 
+
+3. A 线程用 CAS 更新一个 volatile 变量，随后 B 线程用 CAS 更新这个 volatile 变量。 
+
+4. A 线程用 CAS 更新一个 volatile 变量，随后 B 线程读这个 volatile 变量。 
+
+同 时，**volatile 变量的读/写和 CAS 可以实现线程之间的通信**。把这些特性整合在一起，**就形成了整个concurrent包得以实现的基石**。
+
+如果我们仔细分析 concurrent 包的源代码实现，会发现一个通用化的实现模式。
+
+<mark>首先，声明共享变量为 volatile。</mark>
+
+<mark>然后，使用 CAS 的原子条件更新来实现线程之间的同步。 </mark>
+
+<mark>同时，配合以 volatile 的读/写和 CAS 所具有的 volatile 读和写的内存语义来实现线 程之间的通信。  </mark>
+
+
+**AQS，非阻塞数据结构和原子变量类（java.util.concurrent.atomic 包中的类），
+这些concurrent包中的基础类都是使用这种模式来实现的，
+而concurrent包中的高层类又是依赖于这些基础类来实现的。**
+
+从整体来看，concurrent 包的实现示意图如 3-28 所示。 
 
