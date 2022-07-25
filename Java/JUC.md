@@ -537,8 +537,11 @@ JDK 文档对该方法的说明如下：**如果当前状态值等于预期值�
 > 1. **利用 volatile 变量的写-读所具有的内存语义**。 
 > 2. **利用 CAS 所附带的 volatile 读和 volatile 写的内存语义**。
 
+<br>
 
 ### 3.5.4 concurrent 包的实现 
+
+<br>
 
 由于Java的CAS同时具有 volatile 读和 volatile 写的内存语义，因此 Java 线程之间 的通信现在有了下面 4 种方式。 
 
@@ -567,3 +570,69 @@ JDK 文档对该方法的说明如下：**如果当前状态值等于预期值�
 
 从整体来看，concurrent 包的实现示意图如 3-28 所示。 
 
+<br>
+
+## 3.6 final 域的内存语义 
+
+<br>
+
+与前面介绍的锁和 volatile 相比，**对 final 域的读和写更像是普通的变量访问**。 
+下面 将介绍 final 域的内存语义。 
+
+<br>
+
+### 3.6.1 final 域的重排序规则 
+
+<br>
+
+对于 final 域，编译器和处理器要遵守两个重排序规则。 
+
+在构造函数内对一个final域的写入，与随后把这个被构造对象的引用赋值给一个引用变量，这两个操作之间不能重排序。 
+
+<br>
+
+### 3.6.2 写 final 域的重排序规则 
+
+<br>
+
+写 final 域的重排序规则禁止把 final 域的写重排序到构造函数之外。这个规则的实现 包含下面 2 个方面。 
+
+⚫ JMM 禁止编译器把 final 域的写重排序到构造函数之外。 
+
+⚫ 编译器会在 final 域的写之后，构造函数 return 之前，插入一个 StoreStore 屏障。 这个屏障禁止处理器把 final 域的写重排序到构造函数之外。 
+
+<br>
+
+### 3.7.3 happens-before 规则 
+
+<br>
+
+《JSR-133:Java Memory Model and Thread Specification》定义了如下 happens-before 规则。 
+
+<br>
+
+1. 程序顺序规则：一个线程中的每个操作，happens-before 于该线程中的任意后续操作。 
+
+2. 监视器锁规则：对一个锁的解锁，happens-before 于随后对这个锁的加锁。 
+
+3. volatile 变量规则：对一个 volatile 域的写，happens-before 于任意后续对这个 volatile 域的读。 
+
+4. 传递性：如果 A happens-before B，且 B happens-before C，那么 A happens-before C。 
+
+5. start()规则：如果线程 A 执行操作 ThreadB.start()（启动线程 B），那么 A 线程的 ThreadB.start()操作 happens-before 于线程 B 中的任意操作。 
+
+6. join()规则：如果线程 A 执行操作 ThreadB.join()并成功返回，那么线程 B 中的任 意操作 happens-before 于线程 A 从 ThreadB.join()操作成功返回。 
+
+<br>
+
+### 3.8 双重检查锁定与延迟初始化 
+
+<br>
+
+在 Java 多线程程序中，有时候需要采用延迟初始化来降低初始化类和创建对象的开销。 
+
+**双重检查锁定是常见的延迟初始化技术，但它是一个错误的用法**。 
+
+本文将分析双重检查锁定的错误根源，以及两种线程安全的延迟初始化方案。 
+
+在 Java 程序中，有时候可能需要推迟一些高开销的对象初始化操作，并且只有在使用这些对象时才进行初始化。此时，程序员可能会采用延迟初始化。 
