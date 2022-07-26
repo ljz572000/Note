@@ -52,7 +52,7 @@ lock.unlock();
 
 <br>
 
-当程序未正确同步时，就可能会存在数据竞争。Java 内存模型规范对数据竞争的定 义如下。
+当程序未正确同步时，就可能会存在数据竞争。Java 内存模型规范对数据竞争的定义如下。
 
 ⚫ 在一个线程中写一个变量，
 
@@ -356,11 +356,11 @@ JMM 决定一个线程对共享变量的写入何时对另一个线程可见。
 
 从内存语义的角度来说，
 
-* volatile 的写-读与锁的释放-获取有相同的内存效果：
+⚫ volatile 的写-读与锁的释放-获取有相同的内存效果：
 
-* volatile 写和锁的释放有相同的内存语义；
+⚫ volatile 写和锁的释放有相同的内存语义；
 
-* volatile 读与锁的获取有相同的内存语义。
+⚫ volatile 读与锁的获取有相同的内存语义。
 
 <br>
 
@@ -665,14 +665,14 @@ public class SafeLazyInitialization{
 
 
 ```java
-public class DoubleCheckedLocking{
-    private static Instance instance;
+public class DoubleCheckedLocking{//1
+    private static Instance instance;//2
 
-    public static Instance getInstance(){
-        if(instance == null){// 第一次检查
-            synchronized (DoubleCheckedLocking.class){// 加锁
-                if(instance == null){// 第二次检查
-                    instance = new Instance();// 问题的根源出现在这里
+    public static Instance getInstance(){//3
+        if(instance == null){//4. 第一次检查
+            synchronized (DoubleCheckedLocking.class){//5. 加锁
+                if(instance == null){//6. 第二次检查
+                    instance = new Instance();//7. 问题的根源出现在这里
                 }
             }
         }
@@ -684,11 +684,151 @@ public class DoubleCheckedLocking{
 如上面代码所示，如果第一次检查 instance 不为 null，那么就不需要执行下面的加锁和初始化操作。
 因此，可以大幅降低 synchronized 带来的性能开销。
 
+上面代码表面上看起来，似乎两全其美。 
+
+1. 多个线程试图在同一时间创建对象时，会通过加锁来保证只有一个线程能创建对象。
+2. 在对象创建好之后，执行 getInstance()方法将不需要获取锁，直接返回已创建好的对象。
+
 > ⚠️ 
 > 
-> 上面代码表面上看起来，似乎两全其美。 
+> **<mark>双重检查锁定看起来似乎很完美，但这是一个错误的优化！在线程执行到第 4 行， 代码读取到 instance 不为 null 时，instance 引用的对象有可能还没有完成初始化。 </mark>**
+
+前面的双重检查锁定示例代码的第 7 行（instance=new Singleton();）创建了一个对 象。这一行代码可以分解为如下的 3 行伪代码 
+
+```java
+memory = allocate();// 1: 分配对象的内存空间
+ctorInstance(memory); // 2: 初始化对象
+instance = memory; // 3: 设置instance指向刚分配的内存地址
+```
+
+上面 3 行伪代码中的 2 和 3 之间，可能会被重排序（在一些 JIT 编译器上，这种重 排序是真实发生的，详情见参考文献 1 的“Out-of-order writes”部分）。2 和 3 之间重排序 之后的执行时序如下。 
+
+<mark >3-27</mark>
+<mark >3-28</mark>
+
+
+由于单线程内要遵守 intra-thread semantics，从而能保证 A 线程的执行结果不会被改变。但是，当线程 A 和 B 按图 3-38 的时序执行时，B 线程将看到一个还没有被初始化的对象。 
+
+
+在知晓了问题发生的根源之后，我们可以想出两个办法来实现线程安全的延迟初始 化。 
+
+**1) 不允许 2 和 3 重排序。**
+
+**2) 允许 2 和 3 重排序，但不允许其他线程“看到”这个重排序。** 
+
+### 3.8.3 基于 volatile的解决方案
+
+> ✅ 
 > 
->1. 多个线程试图在同一时间创建对象时，会通过加锁来保证只有一个线程能创建对象。 
+> 对于前面的基于双重检查锁定来实现延迟初始化的方案（指 DoubleCheckedLocking 示例代码），
+> 只需要做一点小的修改（把 instance 声明为 volatile 型），就可以实现线程安全的延迟初始化。 
+
+
+
+```java
+public class SafeDoubleCheckedLocking{
+    private volatile static Instance instance;
+    public static Instance getInstance (){
+        if(instance == null){
+            synchronized (SafeDoubleCheckedLocking.class){
+                if (instance == null){
+                    instance = new Instance(); // instance 为 volatile ，现在没问题了
+                }
+            }
+        }
+        return instance;
+    }
+}
+```
+
+<img src="./images/3-39.PNG"/>
+
+<br>
+
+这个方案本质上是通过禁止图3-39中的2和3之间的重排序，来保证线程安全的延迟初始化。
+
+
+### 3.8.4 基于 类 初始化的解决方案
+
+**JVM在类的初始化阶段（即在 Class被加载后，且被线程使用之前），会执行类的初
+始化。在执行类的初始化期间， JVM会去获取一个锁。这个锁可以同步多个线程对同一
+个类的初始化。**
+
+基于这个特性，可以实现另一种线程安全的延迟初始化方案（这个方案被称之为
+Initialization On Demand Holder idiom）。
+
+```java
+public class InstanceFactory{
+    private static class InstanceHolder{
+        public static Instance instance = new Instance();
+    }
+    public static Instance getInstance(){
+        return InstanceHolder.instance ; // 这里将导致 InstanceHolder 类被初始化
+    }
+}
+```
+
+<img src="./images/3-40.PNG"/>
+
+这个方案的实质是：**允许3.8.2节中的3行伪代码中的2和3重排序，但不允许非构造线程（这里指线程 B））“看到”这个重排序**。
+
+
+
+> ✅ 对比基于 volatile 的双重检查锁定的方案和基于类初始化的方案
 > 
-> 2. 在对象创建好之后，执行 getInstance()方法将不需要获取锁，直接返回已创建好的对象。
+> 我们会发现基 于类初始化的方案的实现代码更简洁。
+> 
+> 但基于 volatile 的双重检查锁定的方案有一个额外 的优势：**除了可以对静态字段实现延迟初始化外，还可以对实例字段实现延迟初始化。** 字段延迟初始化降低了初始化类或创建实例的开销，但增加了访问被延迟初始化的字段的开销。
+
+
+**在大多数时候，正常的初始化要优于延迟初始化。**
+
+**如果确实需要对实例字段使用线程安全的延迟初始化，请使用上面介绍的基于volatile的延迟初始化的方案；**
+
+**如果确实需要对静态字段使用线程安全的延迟初始化，请使用上面介绍的基于类初始化的
+方案**。
+
+<br>
+
+### 4.1.5 Daemon 线程 
+
+<br>
+
+Daemon 线程是一种支持型线程(常被叫做守护线程)，**因为它主要被用作程序中后台 调度以及支持性工作**。这意味着，当一个 Java 虚拟机中不存在非 Daemon 线程的时候， Java 虚拟机将会退出。
+
+运行 Daemon 程序，可以看到在终端或者命令提示符上没有任何输出。
+main 线程 （非 Daemon 线程）在启动了线程 DaemonRunner 之后随着 main 方法执行完毕而终止， 而此时 Java 虚拟机中已经没有非 Daemon 线程，虚拟机需要退出。Java 虚拟机中的所有 Daemon 线程都需要立即终止，因此 DaemonRunner 立即终止，但是 DaemonRunner 中的 finally 块并没有执行。 
+
+<br>
+
+### 4.2.1 构造线程 
+
+<br>
+
+在运行线程之前首先要构造一个线程对象，线程对象在构造的时候需要提供线程所需要的属性，如线程所属的线程组、线程优先级、是否是 Daemon 线程等信息。
+
+<br>
+
+### 4.2.2 启动线程 
+
+<br>
+
+线程对象在初始化完成之后，调用 start()方法就可以启动这个线程。线程 start()方法 的含义是：**当前线程（即 parent 线程）同步告知 Java 虚拟机，只要线程规划器空闲，应 立即启动调用 start()方法的线程**。 
+
+
+> ⚠️ 注意
+> 
+> 启动一个线程前，最好为这个线程设置线程名称，因为这样在使用 jstack 分析程序或者进行问题排查时，就会给开发人员提供一些提示，自定义的线程最好能够 起个名字。
+
+
+### 4.2.4 过期的 suspend()、resume()和 stop()
+
+
+> 🚫 不建议使用的原因主要有
+> 
+> 以 suspend()方法为例，在调用后，线程不会释放已经占 有的资源（比如锁），而是占有着资源进入睡眠状态，这样容易引发死锁问题。
+> 
+>同样， stop()方法在终结一个线程时不会保证线程的资源正常释放，通常是没有给予线程完成资 源释放工作的机会，因此会导致程序可能工作在不确定状态下。 
+
+
 
