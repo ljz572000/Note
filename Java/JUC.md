@@ -54,11 +54,11 @@ lock.unlock();
 
 当程序未正确同步时，就可能会存在数据竞争。Java 内存模型规范对数据竞争的定义如下。
 
-⚫ 在一个线程中写一个变量，
+:black_circle: 在一个线程中写一个变量，
 
-⚫ 在另一个线程读同一个变量，
+:black_circle: 在另一个线程读同一个变量，
 
-⚫ 而且写和读没有通过同步来排序。
+:black_circle: 而且写和读没有通过同步来排序。
 
 <br>
 
@@ -66,9 +66,9 @@ lock.unlock();
 
 <br>
 
-⚫ 一个线程中的所有操作必须按照程序的顺序来执行。
+:black_circle: 一个线程中的所有操作必须按照程序的顺序来执行。
 
-⚫ （不管程序是否同步）所有线程都只能看到一个单一的操作执行顺序。在顺序一致性内存模型中，每个操作都必须原子执行且立刻对所有线程可见。
+:black_circle: （不管程序是否同步）所有线程都只能看到一个单一的操作执行顺序。在顺序一致性内存模型中，每个操作都必须原子执行且立刻对所有线程可见。
 
 <br>
 
@@ -130,9 +130,12 @@ lock.unlock();
 
 <br>
 
-**偏向锁在 Java 6 和 Java 7 里是默认启用的**，但是它在应用程序启动几秒钟之后才激活，
+**偏向锁在 Java 6 和 Java 7 里是默认启用的**，但是它在应用程序启动几秒钟之后才激活。
+
 如有必要可以使用 JVM 参数来关闭延迟：`-XX:BiasedLockingStartupDelay=0`。
-如果你确定应用程序里所有的锁通常情况下处于竞争状态，可以通过 JVM 参数关闭偏向锁： `-XX:- UseBiasedLocking=false`，那么程序默认会进入轻量级锁状态
+
+如果你确定应用程序里所有的锁通常情况下处于竞争状态，可以通过 JVM 参数关闭偏向锁：`-XX:- UseBiasedLocking=false`
+，那么程序默认会进入轻量级锁状态
 
 2. 轻量级锁
 
@@ -266,13 +269,13 @@ JMM 决定一个线程对共享变量的写入何时对另一个线程可见。
 
 与程序员密切相关的 happens-before 规则如下。
 
-⚫ 程序顺序规则：一个线程中的每个操作，happens-before 于该线程中的任意后续 操作。
+:black_circle: 程序顺序规则：一个线程中的每个操作，happens-before 于该线程中的任意后续 操作。
 
-⚫ 监视器锁规则：对一个锁的解锁，happens-before 于随后对这个锁的加锁。
+:black_circle: 监视器锁规则：对一个锁的解锁，happens-before 于随后对这个锁的加锁。
 
-⚫ volatile 变量规则：对一个 volatile 域的写，happens-before 于任意后续对这个 volatile 域的读。
+:black_circle: volatile 变量规则：对一个 volatile 域的写，happens-before 于任意后续对这个 volatile 域的读。
 
-⚫ 传递性：如果 A happens-before B，且 B happens-before C，那么 A happens-before C。
+:black_circle: 传递性：如果 A happens-before B，且 B happens-before C，那么 A happens-before C。
 
 <br>
 
@@ -304,11 +307,11 @@ JMM 决定一个线程对共享变量的写入何时对另一个线程可见。
 
 当程序未正确同步时，就可能会存在数据竞争。Java 内存模型规范对数据竞争的定 义如下。
 
-⚫ 在一个线程中写一个变量，
+:black_circle: 在一个线程中写一个变量，
 
-⚫ 在另一个线程读同一个变量，
+:black_circle: 在另一个线程读同一个变量，
 
-⚫ 而且写和读没有通过同步来排序。
+:black_circle: 而且写和读没有通过同步来排序。
 
 当代码中包含数据竞争时，程序的执行往往产生违反直觉的结果（前一章的示例正 是如此）。
 
@@ -318,9 +321,9 @@ JMM 决定一个线程对共享变量的写入何时对另一个线程可见。
 
 顺序一致性内存模型有两大特性。
 
-⚫ 一个线程中的所有操作必须按照程序的顺序来执行。
+:black_circle: 一个线程中的所有操作必须按照程序的顺序来执行。
 
-⚫ （不管程序是否同步）所有线程都只能看到一个单一的操作执行顺序。
+:black_circle: （不管程序是否同步）所有线程都只能看到一个单一的操作执行顺序。
 
 在顺序一致性内存模型中，每个操作都必须原子执行且立刻对所有线程可见。
 
@@ -342,9 +345,9 @@ JMM 决定一个线程对共享变量的写入何时对另一个线程可见。
 
 简而言之，volatile 变量自身具有下列特性。
 
-⚫ 可见性。对一个 volatile 变量的读，总是能看到（任意线程）对这个 volatile 变量 最后的写入。
+:black_circle: 可见性。对一个 volatile 变量的读，总是能看到（任意线程）对这个 volatile 变量 最后的写入。
 
-⚫ 原子性：对任意单个 volatile 变量的读/写具有原子性，但类似于 volatile++这种 复合操作不具有原子性。
+:black_circle: 原子性：对任意单个 volatile 变量的读/写具有原子性，但类似于 volatile++这种 复合操作不具有原子性。
 
 <br>
 
@@ -356,11 +359,11 @@ JMM 决定一个线程对共享变量的写入何时对另一个线程可见。
 
 从内存语义的角度来说，
 
-⚫ volatile 的写-读与锁的释放-获取有相同的内存效果：
+:black_circle: volatile 的写-读与锁的释放-获取有相同的内存效果：
 
-⚫ volatile 写和锁的释放有相同的内存语义；
+:black_circle: volatile 写和锁的释放有相同的内存语义；
 
-⚫ volatile 读与锁的获取有相同的内存语义。
+:black_circle: volatile 读与锁的获取有相同的内存语义。
 
 <br>
 
@@ -387,13 +390,13 @@ JMM 决定一个线程对共享变量的写入何时对另一个线程可见。
 
 下面是基于保守策略的 JMM 内存 屏障插入策略。 
 
-⚫ 在每个 volatile 写操作的前面插入一个 StoreStore 屏障。
+:black_circle: 在每个 volatile 写操作的前面插入一个 StoreStore 屏障。
 
-⚫ 在每个 volatile 写操作的后面插入一个 StoreLoad 屏障。
+:black_circle: 在每个 volatile 写操作的后面插入一个 StoreLoad 屏障。
 
-⚫ 在每个 volatile 读操作的后面插入一个 LoadLoad 屏障。 
+:black_circle: 在每个 volatile 读操作的后面插入一个 LoadLoad 屏障。 
 
-⚫ 在每个 volatile 读操作的后面插入一个 LoadStore 屏障。 
+:black_circle: 在每个 volatile 读操作的后面插入一个 LoadStore 屏障。 
 
 上述内存屏障插入策略非常保守，但它可以保证在任意处理器平台，任意的程序中 都能得到正确的 volatile 内存语义。
 
@@ -434,11 +437,11 @@ JMM 决定一个线程对共享变量的写入何时对另一个线程可见。
 
 下面对锁释放和锁获取的内存语义做个总结。
 
-⚫ 线程 A 释放一个锁，实质上是线程 A 向接下来**将要获取这个锁的某个线程发出了（线程 A 对共享变量所做修改的）消息**。 
+:black_circle: 线程 A 释放一个锁，实质上是线程 A 向接下来**将要获取这个锁的某个线程发出了（线程 A 对共享变量所做修改的）消息**。 
 
-⚫ 线程 B 获取一个锁，实质上是**线程B接收了之前某个线程发出的（在释放这个 锁之前对共享变量所做修改的）消息**。 
+:black_circle: 线程 B 获取一个锁，实质上是**线程B接收了之前某个线程发出的（在释放这个 锁之前对共享变量所做修改的）消息**。 
 
-⚫ 线程 A 释放锁，随后线程 B 获取这个锁，这个过程实质上是**线程 A 通过主内存向线程B发送消息**。
+:black_circle: 线程 A 释放锁，随后线程 B 获取这个锁，这个过程实质上是**线程 A 通过主内存向线程B发送消息**。
 
 <br>
 
@@ -533,7 +536,7 @@ JDK 文档对该方法的说明如下：**如果当前状态值等于预期值�
 
 从本文对 ReentrantLock 的分析可以看出，
 
-> ℹ️ 锁释放-获取的内存语义的实现至少有下面两种方式
+> :exclamation: 锁释放-获取的内存语义的实现至少有下面两种方式
 > 1. **利用 volatile 变量的写-读所具有的内存语义**。 
 > 2. **利用 CAS 所附带的 volatile 读和 volatile 写的内存语义**。
 
@@ -599,9 +602,9 @@ JDK 文档对该方法的说明如下：**如果当前状态值等于预期值�
 
 写 final 域的重排序规则禁止把 final 域的写重排序到构造函数之外。这个规则的实现 包含下面 2 个方面。 
 
-⚫ JMM 禁止编译器把 final 域的写重排序到构造函数之外。 
+:black_circle: JMM 禁止编译器把 final 域的写重排序到构造函数之外。 
 
-⚫ 编译器会在 final 域的写之后，构造函数 return 之前，插入一个 StoreStore 屏障。 这个屏障禁止处理器把 final 域的写重排序到构造函数之外。 
+:black_circle: 编译器会在 final 域的写之后，构造函数 return 之前，插入一个 StoreStore 屏障。 这个屏障禁止处理器把 final 域的写重排序到构造函数之外。 
 
 <br>
 
@@ -851,6 +854,8 @@ interrupt()方法对其进行中断操作。
 
 ### 4.3.2 等待/通知机制 
 
+<br>
+
 一个线程修改了一个对象的值，而另一个线程感知到了变化，然后进行相应的操
 作，整个过程开始于一个线程，而最终执行又是另一个线程。前者是生产者，后者就是
 消费者，这种模式隔离了 “做什么 what）和 “怎么做 How），在功能层面上实现了解
@@ -873,28 +878,112 @@ doSomething();
 2) 难以降低开销。如果降低睡眠的时间，比如休眠 1毫秒，这样消费者能更加迅速
 地发现条件变化，但是却可能消耗更多的处理器资源，造成了无端的浪费。
 
+以上两个问题 ，看似矛盾难以调和，但是**Java通过内置的等待/通知机制**能够很好地解决这个矛盾并实现所需的功能。
+
 上面这段伪代码在条件不满足时就睡眠一段时间，这
 样做的目的是防止过快的 “无
 效 ”尝试，这种方式看似能够解实现所需的功能，但是却存在如下问题。
 
 等待/通知机制，是指一个线程 A 调用了对象 O 的 wait()方法进入等待状态，而另一 个线程 B 调用了对象 O 的 notify()或者 notifyAll()方法，线程 A 收到通知后从对象 O 的 wait()方法返回，进而执行后续操作。上述两个线程通过对象 O 来完成交互，而对象上的 wait()和 notify/notifyAll()的关系就如同开关信号一样，用来完成等待方和通知方之间的 交互工作。 
 
+<br>
+
 #### 4.3.3 等待/通知的经典范式 、
 
+<br>
 
 从 4.3.2 节中的 Concurrency 示例中可以提炼出等待/通知的经典范式，该范式分为两 部分，分别针对等待方（消费者）和通知方（生产者）。 
 
+> 等待方遵循如下原则:
+> 1. 获取对象的锁。
+> 2. 如果条件不满足，那么调用对象的 wait()方法，被通知后仍要检查条件。
+> 3. 条件满足则执行对应的逻辑。
+
+对应的伪代码如下。
+
+```java
+synchronized(对象){
+    while(条件不满足){
+        对象.wait();
+    }
+    对应的处理逻辑
+}
+```
+
+>通知方遵循如下原则 :
+>
+> 1) 获得对象的锁。
+> 2) 改变条件。
+> 3) 通知所有等待在对象上的线程。
+
+对应的伪代码如下。
+
+```java
+synchronized(对象){
+    改变条件
+    对象.notifyAll();
+}
+```
+
+<br>
+
 ### 4.3.4 管道输入/输出流 
 
-管道输入/输出流和普通的文件输入/输出流或者网络输入/输出流不同之处在于，它 主要用于线程之间的数据传输，而传输的媒介为内存。管道输入/输出流主要包括了如下 4 种具体实现：PipedOutputStream、PipedInputStream、PipedReader 和 PipedWriter，前两 种面向字节，而后两种面向字符。
+<br>
 
-4.3.5 Thread.join()的使用 
+管道输入/输出流和普通的文件输入/输出流或者网络输入/输出流不同之处在于，**它主要用于线程之间的数据传输，而传输的媒介为内存**。管道输入/输出流主要包括了如下 4 种具体实现：**PipedOutputStream**、**PipedInputStream**、**PipedReader** 和 **PipedWriter**，前两种面向字节，而后两种面向字符。
 
-如果一个线程 A 执行了 thread.join()语句，其含义是：当前线程 A 等待 thread 线程终 止之后才从 thread.join()返回。线程 Thread 除了提供 join()方法之外，还提供了 join(long millis)和 join(longmillis,int nanos)两个具备超时特性的方法。这两个超时方法表示，如果 线程 thread 在给定的超时时间里没有终止，那么将会从该超时方法中返回。
+### 4.3.5 Thread.join()的使用 
 
-4.3.6 ThreadLocal 的使用 
+如果一个线程 A 执行了 thread.join()语句，其含义是：**当前线程 A 等待 thread 线程终止之后才从thread.join()返回**。**线程Thread 除了提供 join()方法之外，还提供了 join(long millis)和 join(longmillis,int nanos)两个具备超时特性的方法**。这两个超时方法表示，如果线程thread在给定的超时时间里没有终止，那么将会从该超时方法中返回。
 
-ThreadLocal，即线程变量，是一个以 ThreadLocal 对象为键、任意对象为值的存储 结构。这个结构被附带在线程上，也就是说一个线程可以根据一个 ThreadLocal 对象查询 到绑定在这个线程上的一个值。可以通过 set(T)方法来设置一个值，在当前线程下再通 过 get()方法获取到原先设置的值。 
+代码清单4-14是JDK中Thread.join()方法的源码（进行了部分调整）。
+
+```java
+// 加锁当前线程对象
+public final synchronized void join() throws InterruptedException{
+    // 条件不满足，继续等待
+    while(isAlive()){
+        wait(0);
+    }
+    // 条件符合，方法返回
+}
+```
+
+当线程终止时，会调用线程自身的notifyAll()方法，会通知所有等待在该线程对象上的线程。可以看到join方法的逻辑结构与4.3.3节中描述的等待/通知经典范式一致，即加锁、循环和处理逻辑3个步骤。
+
+<br>
+
+### 4.3.6 ThreadLocal 的使用 
+
+<br>
+
+**ThreadLocal，即线程变量**，是一个**以ThreadLocal对象为键、任意对象为值的存储 结构**。这个结构被附带在线程上，也就是说一个线程可以根据一个ThreadLocal对象查询到绑定在这个线程上的一个值。可以通过set(T)方法来设置一个值，在当前线程下再通 过get()方法获取到原先设置的值。
+
+```java
+public class Profiler{
+    // 第一次 get() 方法调用时会进行初始化（如果set方法没有调用），每个线程会调用一次
+    private static final ThreadLocal<Long> TIME_THREADLOCAL = new ThreadLocal<>();
+    
+    protected Long initivalValue(){
+        return System.currentTimeMillis();
+    }
+    
+    public static final void begin(){
+        TIME_THREADLOCAL.set(System.currentTimeMillis());
+    }
+    
+    public static final long end(){
+        return System.currentTimeMillis() - TIME_THREADLOCAL.get();
+    }
+
+    public static void main(String[] args) throws Exception{
+        Profiler.begin();
+        TimeUnit.SECONDS.sleep(1);
+        System.out.println("Cost: "+ Profiler.end()+ " mills");
+    }
+}
+```
 
 Profiler 可以被复用在方法调用耗时统计的功能上，在方法的入口前执行 begin()方 法，在方法调用后执行 end()方法，
 
@@ -902,11 +991,56 @@ Profiler 可以被复用在方法调用耗时统计的功能上，在方法的�
 可以在方法调用前的切入点执行 begin()方法，而在方法 调用后的切入点执行 end()方法，
 这样依旧可以获得方法的执行耗时。 
 
+<br>
 
-4.4.3 线程池技术及其示例
+## 4.4 线程应用实例
 
-从线程池的实现可以看到，当客户端调用 execute(Job)方法时，会不断地向任务列表 jobs 中添加 Job，而每个工作者线程会不断地从 jobs 上取出一个 Job 进行执行，当 jobs 为空时，工作者线程进入等待状态。 添加一个 Job 后，对工作队列 jobs 调用了其 notify()方法，而不是 notifyAll()方法， 因为能够确定有工作者线程被唤醒，这时使用 notify()方法将会比 notifyAll()方法获得更 小的开销（避免将等待队列中的线程全部移动到阻塞队列中）。
+<br>
 
- 可以看到，线程池的本质就是使用了一个线程安全的工作队列连接工作者线程和客 户端线程，客户端线程将任务放入工作队列后便返回，而工作者线程则不断地从工作队 列上取出工作并执行。当工作队列为空时，所有的工作者线程均等待在工作队列上，当 有客户端提交了一个任务之后会通知任意一个工作者线程，随着大量的任务被提交，更 多的工作者线程会被唤醒。 
+开发人员经常会遇到这样的方法调用场景：调用一个方法时等待一段时间（一般来
+说是给定一个时间段），如果该方法能够在给定的时间段之内得到结果，那么将结果立刻
+返回，反之，超时返回默认结果。
 
-4.4.4 一个基于线程池技术的简单 Web 服务器
+
+前面的章节介绍了**等待/通知的经典范式**，即**加锁、条件循环和处理逻辑 3个步骤，而这种范式无法做到超时等待**。而超时等待的加入，只需要对经典范式做出非常小的改动，改动内容如下所示。假设超时时间段是 T，那么可以推断出在当前时间 now+T之后
+就会超时。定义如下变量。
+
+:black_circle: 等待持续时间： REMAINING=T。
+
+:black_circle: 超时时间： FUTURE=now+T。
+
+
+这时仅需要`wait(REMAINING)`即可，在`wait(REMAINING)`返回之后会将执行：`REMAINING=FUTURE–now`。
+
+如果 REMAINING小于等于 0，表示已经超时，直接退出，否则将继续执行 wait(REMAINING)。
+
+上述描述等待超时模式的伪代码如下。
+
+```java
+//对当前对象加锁
+public synchronized Object get (long mills) throws InterruptedException{
+    long future = System.currentTimeMillis () + mills;
+    long remaining = mills;
+    // 当超时大于 0 并且 result 返回值不满足要求
+    while ((result == null ) && remaining > 0 ){
+        wait(remaining);
+        remaining = future - System.currentTimeMillis();
+    }
+    return result;
+}
+```
+<br>
+
+可以看出，**等待超时模式就是在等待/通知范式基础上增加了超时控制**，这使得该模
+式相比原有范式更具有灵活性，因为即使方法执行时间过长，也不会 “永久 ”阻塞调用
+者，而是会按照调用者的要求 “按时 ”返回。
+
+<br>
+
+### 4.4.3 线程池技术及其示例
+
+<br>
+
+**从线程池的实现可以看到，当客户端调用 execute(Job)方法时，会不断地向任务列表 jobs 中添加 Job，而每个工作者线程会不断地从 jobs 上取出一个 Job 进行执行，当 jobs 为空时，工作者线程进入等待状态。 添加一个 Job 后，对工作队列 jobs 调用了其 notify()方法，而不是 notifyAll()方法， 因为能够确定有工作者线程被唤醒，这时使用 notify()方法将会比 notifyAll()方法获得更 小的开销（避免将等待队列中的线程全部移动到阻塞队列中**）。
+
+ 可以看到，**线程池的本质就是使用了一个线程安全的工作队列连接工作者线程和客户端线程**，**客户端线程将任务放入工作队列后便返回，而工作者线程则不断地从工作队 列上取出工作并执行**。当工作队列为空时，所有的工作者线程均等待在工作队列上，当 有客户端提交了一个任务之后会通知任意一个工作者线程，随着大量的任务被提交，更 多的工作者线程会被唤醒。 
