@@ -57,14 +57,6 @@ https://github.com/ikatyang/emoji-cheat-sheet/blob/master/README.md
 https://shd101wyy.github.io/markdown-preview-enhanced/#/zh-cn/diagrams?id=flow-charts
 
 
-```mermaid{align="center"}{filename="我的 mermaid.png"}
-graph TD;
-    A-->B;
-    A-->C;
-    B-->D;
-    C-->D;
-```
-
 Here is a simple flow chart:
 
 ```mermaid
@@ -75,20 +67,10 @@ graph TD;
     C-->D;
 ```
 
-```mermaid{align="center"}{filename="我的 mermaid.png"}
-sequenceDiagram
-    participant Alice
-    participant Bob
-    Alice->>John: Hello John, how are you?
-    loop Healthcheck
-        John->>John: Fight against hypochondria
-    end
-    Note right of John: Rational thoughts <br/>prevail!
-    John-->>Alice: Great!
-    John->>Bob: How about you?
-    Bob-->>John: Jolly good!
-```
-```mermaid{align="center"}{filename="我的 mermaid.png"}
+
+
+
+```mermaid
 gantt
 dateFormat  YYYY-MM-DD
 title Adding GANTT diagram to mermaid
