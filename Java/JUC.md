@@ -656,7 +656,7 @@ public class SafeLazyInitialization{
 }
 ```
 
-> ⚠️ 
+> :warning:
 > 
 > 由于对 getInstance()方法做了同步处理，synchronized 将导致性能开销。
 > 
@@ -692,7 +692,7 @@ public class DoubleCheckedLocking{//1
 1. 多个线程试图在同一时间创建对象时，会通过加锁来保证只有一个线程能创建对象。
 2. 在对象创建好之后，执行 getInstance()方法将不需要获取锁，直接返回已创建好的对象。
 
-> ⚠️ 
+> :warning:
 > 
 > **<mark>双重检查锁定看起来似乎很完美，但这是一个错误的优化！在线程执行到第 4 行， 代码读取到 instance 不为 null 时，instance 引用的对象有可能还没有完成初始化。 </mark>**
 
@@ -721,7 +721,7 @@ instance = memory; // 3: 设置instance指向刚分配的内存地址
 
 ### 3.8.3 基于 volatile的解决方案
 
-> ✅ 
+> :white_check_mark: 
 > 
 > 对于前面的基于双重检查锁定来实现延迟初始化的方案（指 DoubleCheckedLocking 示例代码），
 > 只需要做一点小的修改（把 instance 声明为 volatile 型），就可以实现线程安全的延迟初始化。 
@@ -777,7 +777,7 @@ public class InstanceFactory{
 
 
 
-> ✅ 对比基于 volatile 的双重检查锁定的方案和基于类初始化的方案
+> :white_check_mark: 对比基于 volatile 的双重检查锁定的方案和基于类初始化的方案
 > 
 > 我们会发现基 于类初始化的方案的实现代码更简洁。
 > 
@@ -819,7 +819,7 @@ main 线程 （非 Daemon 线程）在启动了线程 DaemonRunner 之后随着 
 线程对象在初始化完成之后，调用 start()方法就可以启动这个线程。线程 start()方法 的含义是：**当前线程（即 parent 线程）同步告知 Java 虚拟机，只要线程规划器空闲，应 立即启动调用 start()方法的线程**。 
 
 
-> ⚠️ 注意
+> :warning: 注意
 > 
 > 启动一个线程前，最好为这个线程设置线程名称，因为这样在使用 jstack 分析程序或者进行问题排查时，就会给开发人员提供一些提示，自定义的线程最好能够 起个名字。
 
@@ -835,7 +835,7 @@ interrupt()方法对其进行中断操作。
 
 <br>
 
-> 🚫 不建议使用的原因主要有
+> :no_entry_sign: 不建议使用的原因主要有
 > 
 > 以 suspend()方法为例，在调用后，线程不会释放已经占 有的资源（比如锁），而是占有着资源进入睡眠状态，这样容易引发死锁问题。
 > 
