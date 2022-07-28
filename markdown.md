@@ -10,7 +10,7 @@ markdown:
 > github.dev github 在线编辑器
 
 > **Warning**
-> This is a warning
+> :black_circle: This is a warning
 
 > ℹ️ Información
 > Información que el usuario debe notar incluso si hojea.
