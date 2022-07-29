@@ -1284,7 +1284,7 @@ ReadWriteLock 仅定义了**获取读锁和写锁**的两个方法，即**readLo
 
 （以下没有特别说明读写锁均可认为是 ReentrantReadWriteLock）。
 
-1. 读写状态的设计 
+**1. 读写状态的设计**
 
 读写锁同样依赖自定义同步器来实现同步功能，而读写状态就是其同步器的同步状态。
 
@@ -1304,10 +1304,120 @@ ReadWriteLock 仅定义了**获取读锁和写锁**的两个方法，即**readLo
 根据状态的划分能得出一个推论：S 不等于 0 时，当写状态（`S&0x0000FFFF`）等于 0 时，则读状态（S>>>16）大于 0，即读锁已被获取。 
 
 
-2. 写锁的获取与释放 
+**2. 写锁的获取与释放**
 
 写锁是一个支持重进入的排它锁。如果当前线程已经获取了写锁，则增加写状态。
 
 如果当前线程在获取写锁时，读锁已经被获取（读状态不为 0）或者该线程不是已经获取写锁的线程，则当前线程进入等待状态.
 
+```java
+protected final boolean tryAcquire(int acquires){
+    Thread current = Thread.currentThread();
+    int c = getState();
+    int w = exclustiveCount(c);
+    if(c !=0 ){
+        // 存在读锁或者当前获取线程不是已经获取写锁的线程
+        if(w == 0 || current != getExclusiveOwnerThread()) {
+            return false;
+        }
 
+        if (w + exclusiveCount(acquires) > MAX_COUNT ) throw new Error("Maximum lock count exceeded");
+        setState(c + acquires);
+        return true;
+    }
+
+    if (writerShouldBlock() || !compareAndSetState(c, c+acquires))
+    {
+        return false;
+    }
+    setExclusiveOwnerThread(current);
+    return true;
+}
+```
+
+
+该方法除了重入条件（当前线程为获取了写锁的线程）之外，**增加了一个读锁是否存在的判断**。**如果存在读锁，则写锁不能被获取，原因在于：**
+
+
+> ℹ️ 如果存在读锁，则写锁不能被获取
+>
+> 读写锁要确保写锁的操作对读锁可见，如果允许读锁在已被获取的情况下对写锁的获取，那么正在运行的其他读线程就无法感知到当前写线程的操作。因此，只有等待其他读线程都释放了读锁，写锁才能被当前线程获取，而写锁一旦被获取，则其他读写线程的后续访问均被阻塞。
+
+写锁的释放与ReentrantLock的释放过程基本类似，每次释放均减少写状态，当写状态为0时表示写锁已被释放，从而等待的读写线程能够继续访问读写锁，同时前次写线程的修改对后续读写线程可见。
+
+**3. 读锁的获取与释放**
+
+读锁是一个支持重进入的共享锁，它能够被多个线程同时获取,在没有其他写线程访问（或者写状态为0）时，读锁总会被成功地获取，而所做的也只是（线程安全的）增加读状态。
+
+读状态是所有线程获取读锁次数的总和，而每个线程各自获取读锁的次数只能选择保存在ThreadLocal中，由线程自身维护，这使得获取读锁的实现变得复杂。
+
+```java
+protected final int tryAcquireShared(int unused){
+    for(;;){
+        int c = getState();
+        int nextc = c + (1 << 16);
+        if (nextc < c) throw new Error("Maximum lock count exceeded");
+        if (exclusiveCount(c) != 0 && owner != Thread.currentThread()) {
+            return -1;
+        }
+        if( compareAndSetState(c, nextc)) return 1;
+    }
+}
+```
+在tryAcquireShared(int unused)方法中，如果其他线程已经获取了写锁，则当前线程获取读锁失败，进入等待状态。
+
+如果当前线程获取了写锁或者写锁未被获取，则当前线程（线程安全，依靠CAS 保证）增加读状态，成功获取读锁。读锁的每次释放（线程安全的，可能有多个读线程同时释放读锁）均减少读状态， 减少的值是（1<<16）
+
+
+4. 锁降级
+
+**锁降级指的是写锁降级成为读锁**。如果当前线程拥有写锁，然后将其释放，最后再获取读锁，这种分段完成的过程不能称之为锁降级。**锁降级是指把持住（当前拥有的） 写锁，再获取到读锁，随后释放（先前拥有的）写锁的过程**。
+
+接下来看一个锁降级的示例。因为数据不常变化，所以多个线程可以并发地进行数据处理，当数据变更后，如果当前线程感知到数据变化，则进行数据的准备工作，同时其他处理线程被阻塞，直到当前线程完成数据的准备工作.
+
+```java
+public void processData(){
+    readLock.lock();
+    if(!update){
+        // 必须先释放读锁
+        readLock.unlock();
+        // 锁降级从写锁获取到开始
+        writeLock.lock();
+        try{
+            if(!update){
+                // 准备数据的流程（略）
+                update = true;
+            }
+            readLock.lock();
+        }finally {
+            writeLock.unlock();
+        }
+        // 锁降级完成，写锁降级为读锁
+    }
+    try{
+        // 使用数据的流程（略）
+    }finally {
+        readLock.unlock();
+    }
+}
+```
+
+
+当数据发生变更后，**update 变量（布尔类型且volatile 修饰）被设置为false**，此时**所有访问processData()方法的线程都能够感知到变化**，**但只有一个线程能够获取到写锁**，**其他线程会被阻塞在读锁和写锁的lock()方法上**。**当前线程获取写锁完成数据准备之后，再获取读锁，随后释放写锁，完成锁降级**。
+
+
+> ℹ️ 锁降级中读锁的获取是否必要呢？
+>
+> 答案是必要的。
+> 
+> **主要是为了保证数据的可见性， 如果当前线程不获取读锁而是直接释放写锁**，**假设此刻另一个线程（记作线程T）获取了写锁并修改了数据，那么当前线程无法感知线程T 的数据更新**。
+> 
+> 如果当前线程获取读锁，即遵循锁降级的步骤，则线程T 将会被阻塞，直到当前线程使用数据并释放读锁之后，线程T 才能获取写锁进行数据更新。
+> **ReentrantReadWriteLock 不支持锁升级**（把持读锁、获取写锁，最后释放读锁的过程）。目的也是保证数据可见性，如果读锁已被多个线程获取，其中任意线程成功获取了写锁并更新了数据，则其更
+新对其他获取到读锁的线程是不可见的。
+
+5.5 LockSupport 工具
+回顾5.2 节，当需要阻塞或唤醒一个线程的时候，都会使用LockSupport 工具类来完成相应工作。LockSupport 定义了一组的公共静态方法，这些方法提供了最基本的线程阻塞和唤醒功能，而
+LockSupport 也成为构建同步组件的基础工具。
+LockSupport 定义了一组以park 开头的方法用来阻塞当前线程，以及unpark(Thread thread) 方法来唤醒一个被阻塞的线程。Park 有停车的意思，假设线程为车辆，那么park 方法代表着停车，而
+unpark 方法则是指车辆启动离开.
