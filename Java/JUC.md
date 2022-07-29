@@ -1612,26 +1612,142 @@ Segment 是一种可重入锁（ReentrantLock），**在ConcurrentHashMap 里扮
 
 ### 6.1.4 定位Segment
 
-既然ConcurrentHashMap 使用分段锁Segment 来保护不同段的数据，那么在插入和获取元素的时候，必须先通过散列算法定位到Segment。可以看到ConcurrentHashMap 会首先使用
-Wang/Jenkins hash 的变种算法对元素的hashCode 进行一次再散列。
-6.1.5 ConcurrentHashMap 的操作
+**既然ConcurrentHashMap 使用分段锁Segment 来保护不同段的数据，那么在插入和获取元素的时候，必须先通过散列算法定位到Segment**。可以看到ConcurrentHashMap 会首先使用Wang/Jenkins hash 的变种算法对元素的hashCode 进行一次再散列。
+
+
+### 6.1.5 ConcurrentHashMap 的操作
+
 本节介绍ConcurrentHashMap 的3 种操作——get 操作、put 操作和size 操作。
-1) get 操作
-Segment 的get 操作实现非常简单和高效。先经过一次再散列，然后使用这个散列值通过散列运算定位到Segment，再通过散列算法定位到元素
-2) put 操作
-由于put 方法里需要对共享变量进行写入操作，所以为了线程安全，在操作共享变量时必须加锁。put 方法首先定位到Segment，然后在Segment 里进行插入操作。插入操作需要经历两个步骤，第一步
-判断是否需要对Segment 里的HashEntry 数组进行扩容， 第二步定位添加元素的位置，然后将其放在HashEntry 数组里。
-3) size 操作
-如果要统计整个ConcurrentHashMap 里元素的大小，就必须统计所有Segment 里元素的大小后求和。
-因为在累加count 操作过程中，之前累加过的count 发生变化的几率非常小，所以ConcurrentHashMap 的做法是先尝试2 次通过不锁住Segment 的方式来统计各个Segment 大小，如果统计的过程
-中，容器的count 发生了变化，则再采用加锁的方式来统计所有Segment 的大小。
-6.2 ConcurrentLinkedQueue
+
+
+> ℹ️ 1) get 操作
+> Segment 的get 操作实现非常简单和高效。先经过一次再散列，然后使用这个散列值通过散列运算定位到Segment，再通过散列算法定位到元素
+
+
+> ℹ️ 2) put 操作
+> 由于put 方法里需要对共享变量进行写入操作，所以为了线程安全，在操作共享变量时必须加锁。put 方法首先定位到Segment，然后在Segment 里进行插入操作。插入操作需要经历两个步骤，第一步判断是否需要对Segment 里的HashEntry 数组进行扩容， 第二步定位添加元素的位置，然后将其放在HashEntry 数组里。
+
+
+
+> ℹ️ 3) size 操作
+> 如果要统计整个ConcurrentHashMap 里元素的大小，就必须统计所有Segment 里元素的大小后求和。因为在累加count 操作过程中，之前累加过的count 发生变化的几率非常小，所以ConcurrentHashMap 的做法是先尝试2 次通过不锁住Segment 的方式来统计各个Segment 大小，如果统计的过程中，容器的count 发生了变化，则再采用加锁的方式来统计所有Segment 的大小。
+
+## 6.2 ConcurrentLinkedQueue
+
 在并发编程中，有时候需要使用线程安全的队列。
+
 如果要实现一个线程安全的队列有两种方式：
-一种是使用阻塞算法，另一种是使用非阻塞算法。
+
+**一种是使用阻塞算法，另一种是使用非阻塞算法。**
+
 使用阻塞算法的队列可以用一个锁（入队和出队用同一把锁）或两个锁（入队和出队用不同的锁）等方式来实现。
+
+
 非阻塞的实现方式则可以使用循环CAS 的方式来实现。
-ConcurrentLinkedQueue 是一个基于链接节点的无界线程安全队列，它采用先进先出的规则对节点进行排序，当我们添加一个元素的时候，它会添加到队列的尾部；当我们获取一个元素时，它会返回队
-列头部的元素。它采用了“wait-free”算法（即CAS 算法） 来实现，该算法在Michael&Scott 算法上进行了一些修改。
+
+**ConcurrentLinkedQueue 是一个基于链接节点的无界线程安全队列，它采用先进先出的规则对节点进行排序**，当我们添加一个元素的时候，它会添加到队列的尾部；当我们获取一个元素时，它会返回队列头部的元素。它采用了“wait-free”算法（即CAS 算法）来实现，该算法在Michael&Scott 算法上进行了一些修改。
+
+![](./images/6-3.png)
+
+ConcurrentLinkedQueue 由head 节点和tail 节点组成，每个节点（Node）由节点元素（item）和指向下一个节点（next）的引用组成，节点与节点之间就是通过这个next 关联起来，从而组成一张链表结构的队列。默认情况下head 节点存储的元素为空，tail 节点等于head 节点。
+
+## 6.3 Java 中的阻塞队列
+
+### 6.3.1 什么是阻塞队列阻塞队列
+
+（BlockingQueue）是一个支持两个附加操作的队列。这两个附加的操作支持阻塞的插入和移除方法。
+
+支持阻塞的插入方法：意思是当队列满时，队列会阻塞插入元素的线程，直到队列不满。
+
+支持阻塞的移除方法：意思是在队列为空时，获取元素的线程会等待队列变为非空。
+
+### 6.3.2 Java 里的阻塞队列
+
+JDK 7 提供了7 个阻塞队列，如下。
+
+:black_circle: ArrayBlockingQueue：一个由数组结构组成的有界阻塞队列。
+
+:black_circle: LinkedBlockingQueue：一个由链表结构组成的有界阻塞队列。
+
+:black_circle: PriorityBlockingQueue：一个支持优先级排序的无界阻塞队列。
+
+:black_circle: DelayQueue：一个使用优先级队列实现的无界阻塞队列。
+
+:black_circle: SynchronousQueue：一个不存储元素的阻塞队列。
+
+:black_circle: LinkedTransferQueue：一个由链表结构组成的无界阻塞队列。
+
+:black_circle: LinkedBlockingDeque：一个由链表结构组成的双向阻塞队列。
 
 
+> ℹ️ 1) ArrayBlockingQueue
+> ArrayBlockingQueue 是一个用数组实现的有界阻塞队列。
+> 此队列按照先进先出（FIFO）的原则对元素进行排序。默认情况下不保证线程公平的访问队列，所谓公平访问队列是指阻塞的线程，可以按照阻塞的先后顺序访问队列，即先阻塞线程先访问队列。非公平性是对先等待的线程是非公平的，当队列可用时，阻塞的线程都可以争夺访问队列的资格，有可能先阻塞的线程最后才访问队列。为了保证公平性，通常会降低吞吐量。我们可以使用以下代码创建一个公平的阻塞队列。
+
+
+> ℹ️ 2) LinkedBlockingQueue
+> LinkedBlockingQueue是一个用链表实现的有界阻塞队列。此队列的默认和最大长度为 Integer.MAX_VALUE。此队列按照先进先出的原则对元素进行排序。
+
+> ℹ️ 3) PriorityBlockingQueue
+> PriorityBlockingQueue是一个支持优先级的无界阻塞队列。默认情况下元素采取自然顺序升序排列。也可以自定义类实现 compareTo()方法来指定元素排序规则，或者初始化PriorityBlockingQueue时，指定构造参数 Comparator来对元素进行排序。需要注意的是不能保证同优先级元素的顺序。
+
+> ℹ️ 4) DelayQueue
+> DelayQueue 是一个支持延时获取元素的无界阻塞队列。
+> DelayQueue 非常有用，可以将DelayQueue运用在以下应用场景。
+> :white_check_mark: 缓存系统的设计：可以用DelayQueue 保存缓存元素的有效期，使用一个线程循环查询DelayQueue，一旦能从DelayQueue 中获取元素时，表示缓存有效期到了。
+> :white_check_mark: 定时任务调度：使用DelayQueue 保存当天将会执行的任务和执行时间，一旦从DelayQueue 中获取到任务就开始执行，比如TimerQueue 就是使用DelayQueue 实现的。
+
+> ℹ️ 5) SynchronousQueue
+> **SynchronousQueue 是一个不存储元素的阻塞队列**。每一个put 操作必须等待一个take 操作，否则不能继续添加元素。它支持公平访问队列。默认情况下线程采用非公平性策略访问队列。使用以下构造方法可以创建公平性访问的SynchronousQueue，如果设置为true，则等待的线程会采用先进先出的顺序访问队列。
+
+```java
+public SynchronousQueue(boolean fair){
+    transferer = fair new TransferQueue():new TransferStack();
+}
+```
+
+> ℹ️ 6) LinkedTransferQueue
+
+LinkedTransferQueue 是一个由链表结构组成的无界阻塞TransferQueue 队列。
+
+> ℹ️ 7) LinkedBlockingDeque
+
+LinkedBlockingDeque 是一个由链表结构组成的双向阻塞队列。
+
+
+
+
+### 6.3.3 阻塞队列的实现原理
+
+使用通知模式实现。
+
+> **通知模式**
+> 所谓，就是当生产者往满的队列里添加元素时会阻塞住生产者，当消费者消费了一个队列中的元素后，会通知生产者当前队列可用。通过查看JDK 源码发现ArrayBlockingQueue 使用了Condition 来实现，代码如下。当往队列里插入一个元素时，如果队列不可用，那么阻塞生产者主要通过LockSupport.park（this）来实现。
+
+
+### 6.4 Fork/Join 框架
+
+### 6.4.1 什么是Fork/Join 框架
+
+Fork/Join 框架是Java 7 提供的一个用于并行执行任务的框架，是一个把大任务分割成若干个小任务，最终汇总每个小任务结果后得到大任务结果的框架。
+
+本节将会介绍Fork/Join 框架的基本原理、算法、设计方式、应用与实现等。
+
+![](./images/6-6.png)
+
+图 6-6 Fork Join 的运行流程图
+
+### 6.4.2 工作窃取算法
+
+工作窃取（work-stealing）算法是指某个线程从其他队列里窃取任务来执行。
+
+那么， 为什么需要使用工作窃取算法呢？
+
+假如我们需要做一个比较大的任务，可以把这个任务分割为若干互不依赖的子任务，
+
+为了减少线程间的竞争，把这些子任务分别放到不同的队列里，并为每个队列创建一个单独的线程来执行队列里的任务，线程和队列一一对应。比如A 线程负责处理A 队列里的任务。但是，有的线程会先
+把自己队列里的任务干完，而其他线程对应的队列里还有任务等待处理。干完活的线程与其等着，不如去帮其他线程干活，于是它就去其他线程的队列里窃取一个任务来执行。而在这时它们会访问同一个
+队列，所以为了减少窃取任务线程和被窃取任务线程之间的竞争，通常会使用双端队列，被窃取任务线程永远从双端队列的头部拿任务执行，而窃取任务的线程永远从双端队列的尾部拿任务执行。工作窃
+取的运行流程如图6-7 所示。
+工作窃取算法的优点：充分利用线程进行并行计算，减少了线程间的竞争。
+工作窃取算法的缺点：在某些情况下还是存在竞争，比如双端队列里只有一个任务时。并且该算法会消耗了更多的系统资源，比如创建多个线程和多个双端队列。
