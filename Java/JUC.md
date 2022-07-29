@@ -1416,8 +1416,40 @@ public void processData(){
 > **ReentrantReadWriteLock 不支持锁升级**（把持读锁、获取写锁，最后释放读锁的过程）。目的也是保证数据可见性，如果读锁已被多个线程获取，其中任意线程成功获取了写锁并更新了数据，则其更
 新对其他获取到读锁的线程是不可见的。
 
-5.5 LockSupport 工具
-回顾5.2 节，当需要阻塞或唤醒一个线程的时候，都会使用LockSupport 工具类来完成相应工作。LockSupport 定义了一组的公共静态方法，这些方法提供了最基本的线程阻塞和唤醒功能，而
-LockSupport 也成为构建同步组件的基础工具。
-LockSupport 定义了一组以park 开头的方法用来阻塞当前线程，以及unpark(Thread thread) 方法来唤醒一个被阻塞的线程。Park 有停车的意思，假设线程为车辆，那么park 方法代表着停车，而
-unpark 方法则是指车辆启动离开.
+## 5.5 LockSupport 工具
+
+
+回顾5.2 节，当需要阻塞或唤醒一个线程的时候，都会使用LockSupport 工具类来完成相应工作。
+
+LockSupport 定义了一组的公共静态方法，这些方法提供了最基本的线程阻塞和唤醒功能，而LockSupport 也成为构建同步组件的基础工具。
+
+LockSupport 定义了一组以park 开头的方法用来阻塞当前线程，以及unpark(Thread thread) 方法来唤醒一个被阻塞的线程。Park 有停车的意思，假设线程为车辆，那么park 方法代表着停车，而unpark 方法则是指车辆启动离开.
+
+![LockSupport 提供的阻塞和唤醒方法](./images/t5-10.png)
+
+
+在Java 6 中，LockSupport 增加了
+
+* park(Object blocker)
+
+* parkNanos(Object blocker,long nanos)
+
+* parkUntil(Object blocker,long deadline)
+
+3 个方法，用于实现阻塞当前线程的功能，其中参数
+blocker 是用来标识当前线程在等待的对象（以下称为阻塞对象），**该对象主要用于问题排查和系统监控**。
+
+![表5-11](./images/t5-11.png)
+
+从表5-11 的线程dump结果可以看出，代码片段的内容都是阻塞当前线程10 秒，但从线程dump 结果可以看出，有阻塞对象的parkNanos 方法能够传递给开发人员更多的现场信息。这是由于在
+
+Java 5 之前，当线程阻塞（使用synchronized 关键字）在一个对象上时，通过线程dump 能够查看到该线程的阻塞对象，方便问题定位，而Java 5 推出的Lock 等并发工具时却遗漏了这一点，致使在线程dump 时无法提供阻塞对象的信息。
+
+因此，在Java 6 中，LockSupport 新增了上述3 个含有阻塞对象的park 方法，用以替代原有的park 方法。
+
+## 5.6 Condition 接口
+
+
+Condition 接口也提供了类似Object 的监视器方法，与Lock 配合可以实现等待/通知模式，但是这两者在使用方式以及功能特性上还是有差别的。
+
+![表5-12](./images/t5-12.png)
