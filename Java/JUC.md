@@ -1698,7 +1698,7 @@ JDK 7 提供了7 个阻塞队列，如下。
 > :white_check_mark: 定时任务调度：使用DelayQueue 保存当天将会执行的任务和执行时间，一旦从DelayQueue 中获取到任务就开始执行，比如TimerQueue 就是使用DelayQueue 实现的。
 
 > ℹ️ 5) SynchronousQueue
-> **SynchronousQueue 是一个不存储元素的阻塞队列**。每一个put 操作必须等待一个take 操作，否则不能继续添加元素。它支持公平访问队列。默认情况下线程采用非公平性策略访问队列。使用以下构造方法可以创建公平性访问的SynchronousQueue，如果设置为true，则等待的线程会采用先进先出的顺序访问队列。
+> **SynchronousQueue 是一个不存储元素的阻塞队列**。每一个put 操作必须等待一个take 操作，否则不能继续添加元素。它支持公平访问队列。默认情况下线程采用**非公平性策略访问队列**。使用以下构造方法可以创建公平性访问的SynchronousQueue，如果设置为true，则等待的线程会采用先进先出的顺序访问队列。
 
 ```java
 public SynchronousQueue(boolean fair){
@@ -1722,7 +1722,7 @@ LinkedBlockingDeque 是一个由链表结构组成的双向阻塞队列。
 使用通知模式实现。
 
 > **通知模式**
-> 所谓，就是当生产者往满的队列里添加元素时会阻塞住生产者，当消费者消费了一个队列中的元素后，会通知生产者当前队列可用。通过查看JDK 源码发现ArrayBlockingQueue 使用了Condition 来实现，代码如下。当往队列里插入一个元素时，如果队列不可用，那么阻塞生产者主要通过LockSupport.park（this）来实现。
+> 所谓，就是当生产者往满的队列里添加元素时会阻塞住生产者，当消费者消费了一个队列中的元素后，会通知生产者当前队列可用。通过查看JDK 源码发现**ArrayBlockingQueue 使用了Condition**来实现，代码如下。当往队列里插入一个元素时，如果队列不可用，那么阻塞生产者主要通过LockSupport.park（this）来实现。
 
 
 ### 6.4 Fork/Join 框架
@@ -1745,9 +1745,539 @@ Fork/Join 框架是Java 7 提供的一个用于并行执行任务的框架，是
 
 假如我们需要做一个比较大的任务，可以把这个任务分割为若干互不依赖的子任务，
 
-为了减少线程间的竞争，把这些子任务分别放到不同的队列里，并为每个队列创建一个单独的线程来执行队列里的任务，线程和队列一一对应。比如A 线程负责处理A 队列里的任务。但是，有的线程会先
-把自己队列里的任务干完，而其他线程对应的队列里还有任务等待处理。干完活的线程与其等着，不如去帮其他线程干活，于是它就去其他线程的队列里窃取一个任务来执行。而在这时它们会访问同一个
-队列，所以为了减少窃取任务线程和被窃取任务线程之间的竞争，通常会使用双端队列，被窃取任务线程永远从双端队列的头部拿任务执行，而窃取任务的线程永远从双端队列的尾部拿任务执行。工作窃
-取的运行流程如图6-7 所示。
-工作窃取算法的优点：充分利用线程进行并行计算，减少了线程间的竞争。
-工作窃取算法的缺点：在某些情况下还是存在竞争，比如双端队列里只有一个任务时。并且该算法会消耗了更多的系统资源，比如创建多个线程和多个双端队列。
+为了减少线程间的竞争，把这些子任务分别放到不同的队列里，并为每个队列创建一个单独的线程来执行队列里的任务，线程和队列一一对应。
+
+
+比如A 线程负责处理A 队列里的任务。但是，有的线程会先把自己队列里的任务干完，而其他线程对应的队列里还有任务等待处理。干完活的线程与其等着，不如去帮其他线程干活，于是它就去其他线程的队列里窃取一个任务来执行。而在这时它们会访问同一个队列，所以为了减少窃取任务线程和被窃取任务线程之间的竞争，通常会使用双端队列，被窃取任务线程永远从双端队列的头部拿任务执行，而窃取任务的线程永远从双端队列的尾部拿任务执行。
+
+工作窃取的运行流程如图6-7 所示。
+
+![图 6-7 工作窃取运行流程图](./images/6-7.png)
+
+**工作窃取算法的优点**：充分利用线程进行并行计算，减少了线程间的竞争。
+
+**工作窃取算法的缺点**：在某些情况下还是存在竞争，比如双端队列里只有一个任务时。并且该算法会消耗了更多的系统资源，比如创建多个线程和多个双端队列。
+
+### 6.4.3 Fork/Join 框架的设计
+
+
+我们已经很清楚 Fork/Join 框架的需求了，那么可以思考一下，如果让我们来设计一 个 Fork/Join 框架，该如何设计？
+
+这个思考有助于你理解 Fork/Join 框架的设计。 
+
+
+**步骤 1 分割任务**
+
+首先我们需要有一个 fork 类来把大任务分割成子任务，有可能 子任务还是很大，所以还需要不停地分割，直到分割出的子任务足够小。 
+
+**步骤 2 执行任务并合并结果** 
+
+分割的子任务分别放在双端队列里，然后几个启动 线程分别从双端队列里获取任务执行。子任务执行完的结果都统一放在一个队列里，启 动一个线程从队列里拿数据，然后合并这些数据。 
+
+Fork/Join 使用两个类来完成以上两件事情。 
+
+
+> ℹ️ 1. ForkJoinTask
+> 我们要使用 ForkJoin 框架，必须首先创建一个 ForkJoin 任务。它提供在任务中执行fork()和 join()操作的机制。通常情况下，我们不需要直接继承 ForkJoinTask 类，只需要继承它的子类，Fork/Join 框架提供了以下两个子类。 
+> :black_circle:  RecursiveAction：用于没有返回结果的任务。 
+> :black_circle:  RecursiveTask：用于有返回结果的任务。 
+
+
+> ℹ️ 2. ForkJoinPool
+> 任务分割出的子任务会添加到当前工作线程所维护的双端队列中，进入队列的头部。
+> 当一个工作线程的队列里暂时没有任务时，它会随机从其他工作线程的队列的尾部获取一个任务。
+
+
+### 6.4.4 使用 Fork/Join 框架 
+
+让我们通过一个简单的需求来使用 Fork/Join 框架，需求是：计算 1+2+3+4 的结果。 
+
+
+使用 Fork/Join 框架首先要考虑到的是如何分割任务，如果希望每个子任务最多执行 两个数的相加，那么我们设置分割的阈值是 2，由于是 4 个数字相加，所以 Fork/Join 框 架会把这个任务 fork 成两个子任务，子任务一负责计算 1+2，子任务二负责计算 3+4， 然后再 join 两个子任务的结果。因为是有结果的任务，所以必须继承 RecursiveTask，
+
+
+
+### 6.4.5 Fork/Join 框架的异常处理
+
+ForkJoinTask 在执行的时候可能会抛出异常，**但是我们没办法在主线程里直接捕获异常**，所以 ForkJoinTask 提供了 isCompletedAbnormally()方法来检查任务是否已经抛出异常或已经被取消了，并且可以通过 ForkJoinTask 的 getException 方法获取异常。使用 如下代码。
+
+
+```java
+if (task.isCompletedAbnormally()){
+    System.out.println(task.getException());
+}
+```
+
+getException 方法返回Throwable 对象，如果任务被取消了则返回 CancellationException。如果任务没有完成或者没有抛出异常则返回 null。
+
+### 6.4.6 Fork/Join 框架的实现原理
+
+略
+
+# 7. Java 中的 13 个原子操作类
+
+Java 从 JDK 1.5 开始提供了 java.util.concurrent.atomic 包（以下简称 Atomic 包）， 这个包中的原子操作类提供了一种**用法简单、性能高效、线程安全地更新一个变量**的方式。因为变量的类型有很多种，所以在 Atomic 包里一共**提供了 13 个类，属于 4 种类型 的原子更新方式**，分别是
+
+* 原子更新基本类型
+
+* 原子更新数组
+
+* 原子更新引用
+
+* 原子更新属性（字段）
+
+
+Atomic 包里的类基本都是使用 Unsafe 实现的包装类。
+
+
+## 7.1 原子更新基本类型类
+
+使用原子的方式更新基本类型，Atomic 包提供了以下3个类。
+
+:black_circle: AtomicBoolean：原子更新布尔类型。 
+
+:black_circle: AtomicInteger：原子更新整型。 
+
+:black_circle: AtomicLong：原子更新长整型。 
+
+以上 3 个类提供的方法几乎一模一样，所以本节仅以 AtomicInteger 为例进行讲解， AtomicInteger 的常用方法如下。 
+
+
+:black_circle: int addAndGet（int delta）：以原子方式将输入的数值与实例中的值 （AtomicInteger 里的 value）相加，并返回结果。 
+
+:black_circle: boolean compareAndSet（int expect，int update）：如果输入的数值等于预期值， 则以原子方式将该值设置为输入的值。 
+
+:black_circle: int getAndIncrement()：以原子方式将当前值加 1，注意，这里返回的是自增前的值。 
+
+:black_circle: void lazySet（int newValue）：最终会设置成 newValue，使用 lazySet 设置值后， 可能导致其他线程在之后的一小段时间内还是可以读到旧的值。
+
+关于该方法的更 多信息可以参考并发编程网翻译的一篇文章《AtomicLong.lazySet 是如何工作 的？》，文章地址是“http://ifeve.com/how-does-atomiclong-lazyset-work/”。 
+
+:black_circle: int getAndSet（int newValue）：以原子方式设置为 newValue 的值，并返回旧值。
+
+
+```java
+import java.util.concurrent.atomic.AtomicInteger;
+
+public class AtomicIntegerTest{
+    static AtomicInteger ai = new AtomicInteger(1);
+
+    public static void main(String[] args){
+        System.out.println(ai.getAndIncrement());
+        System.out.println(ai.get());
+    }
+}
+```
+
+
+```java
+public final int getAndIncrement(){
+    for(;;){
+        int current = get();
+        int next = current + 1;
+        if (compareAndSet(current, next)) return current;
+    }
+}
+
+public final boolean compareAndSet(int expect, int update){
+    return unsafe.compareAndSwapInt(this, valueOffset, expect, update);
+}
+```
+
+
+> ℹ️ 
+> 源码中 for 循环体的第一步先取得 AtomicInteger 里存储的数值，第二步对 AtomicInteger 的当前数值进行加 1 操作，关键的第三步调用 compareAndSet 方法来进行 原子更新操作，该方法先检查当前数值是否等于 current，等于意味着 AtomicInteger 的值 没有被其他线程修改过，则将 AtomicInteger 的当前数值更新成 next 的值，如果不等 compareAndSet 方法会返回 false，程序会进入 for 循环重新进行 compareAndSet 操作。
+
+Atomic 包提供了 3 种基本类型的原子更新，但是 Java 的基本类型里还有 char、float 和 double 等。
+
+> ℹ️ 那么问题来了，如何原子的更新其他的基本类型呢？
+> Atomic 包里的类基本 都是使用 Unsafe 实现的，让我们一起看一下 Unsafe 的源码，如代码清单 7-3 所示
+
+```java
+    @ForceInline
+    public final boolean compareAndSwapObject(Object o, long offset,
+                                              Object expected,
+                                              Object x) {
+        return theInternalUnsafe.compareAndSetObject(o, offset, expected, x);
+    }
+
+    @ForceInline
+    public final boolean compareAndSwapInt(Object o, long offset,
+                                           int expected,
+                                           int x) {
+        return theInternalUnsafe.compareAndSetInt(o, offset, expected, x);
+    }
+
+    @ForceInline
+    public final boolean compareAndSwapLong(Object o, long offset,
+                                            long expected,
+                                            long x) {
+        return theInternalUnsafe.compareAndSetLong(o, offset, expected, x);
+    }
+```
+
+通过代码，我们发现 Unsafe 只提供了 3 种 CAS 方法：compareAndSwapObject、 compareAndSwapInt 和 compareAndSwapLong，再看 AtomicBoolean 源码，发现它是**先把 Boolean 转换成整型，再使用 compareAndSwapInt 进行 CAS，所以原子更新 char、float 和 double 变量也可以用类似的思路来实现**。
+
+## 7.2 原子更新数组 
+
+通过原子的方式更新数组里的某个元素，Atomic 包提供了以下 4 个类。 
+
+:black_circle: AtomicIntegerArray：原子更新整型数组里的元素。 
+
+:black_circle: AtomicLongArray：原子更新长整型数组里的元素。 
+
+:black_circle: AtomicReferenceArray：原子更新引用类型数组里的元素。 
+
+:black_circle:  AtomicIntegerArray 类主要是提供原子的方式更新数组里的整型，
+
+其常用方法如下。
+
+:black_circle: int addAndGet（int i，int delta）：以原子方式将输入值与数组中索引 i 的元素相加。
+
+:black_circle: boolean compareAndSet（int i，int expect，int update）：如果当前值等于预期值， 则以原子方式将数组位置 i 的元素设置成 update 值。 
+以上几个类提供的方法几乎一样，所以本节仅以 AtomicIntegerArray 为例进行讲解， 
+
+
+AtomicIntegerArray 的使用实例代码如代码清单 7-4 所示。
+
+```java
+public static void main(String[] args){
+    static int[] value = new int[]{1, 2};
+    static AtomicIntegerArray ai = new AtomicIntegerArray(value);
+    ai.getAndSet(0, 3);
+
+    System.out.println(ai.get(0));
+    System.out.println(value[0]);
+}
+
+```
+
+需要注意的是，数组 value 通过构造方法传递进去，然后 AtomicIntegerArray 会将当 前数组复制一份，所以当 AtomicIntegerArray 对内部的数组元素进行修改时，不会影响 传入的数组。 
+
+
+## 7.3 原子更新引用类型
+
+原子更新基本类型的 AtomicInteger，只能更新一个变量，**如果要原子更新多个变量，就需要使用这个原子更新引用类型提供的类**。Atomic 包提供了以下 3 个类。 
+
+:black_circle: AtomicReference：原子更新引用类型。 
+
+:black_circle: AtomicReferenceFieldUpdater：原子更新引用类型里的字段。 
+
+:black_circle: AtomicMarkableReference：原子更新带有标记位的引用类型。
+
+可以原子更新一个 布尔类型的标记位和引用类型。
+
+
+构造方法是 AtomicMarkableReference（V initialRef，boolean initialMark）。 
+
+7-5 AtomicReferenceTest.java 
+```java
+public class AtomicReferenceTest {
+    public static AtomicReference<user> atomicUserRef = new AtomicReference<user>();
+
+    public static void main(String[] args) {
+        User user = new User("conan", 15);
+        atomicUserRef.set(user);
+        User updateUser = new User("Shinichi", 17);
+        atomicUserRef.compareAndSet(user, updateUser);
+        System.out.println(atomicUserRef.get().getName());
+        System.out.println(atomicUserRef.get().getOld());
+    }
+    
+    static class User{
+        private String name;
+        private int old;
+        
+        public User(String name, int old){
+            this.name = name;
+            this.old = old;
+        }
+        
+        public String getName(){
+            return name;
+        }
+        
+        public int getOld(){
+            return old;
+        }
+    }
+}
+```
+
+## 7.4 原子更新字段类
+
+如果需原子地更新某个类里的某个字段时，就需要使用原子更新字段类，Atomic 包 提供了以下 3 个类进行原子字段更新。 
+
+:black_circle: AtomicIntegerFieldUpdater：原子更新整型的字段的更新器。 
+
+:black_circle: AtomicLongFieldUpdater：原子更新长整型字段的更新器。 
+
+:black_circle: AtomicStampedReference：原子更新带有版本号的引用类型。
+
+**该类将整数值与引用关联起来，可用于原子的更新数据和数据的版本号，可以解决使用 CAS 进行 原子更新时可能出现的 ABA 问题**。
+
+> ℹ️ 要想原子地更新字段类需要两步
+> 第一步，因为原子更新字段类都是抽象类，每次使用的时候必须使用静态方法 newUpdater()创建一个更新器，并且需要设置想要更新的类和属性。
+> 第二步，更新类的字段（属性）必须使用 public volatile 修饰符
+
+
+
+# 8. Java 中的并发工具类
+
+
+在 JDK 的并发包里提供了几个非常有用的并发工具类。
+
+CountDownLatch、 CyclicBarrier 和 Semaphore 工具类提供了一种并发流程控制的手段，Exchanger 工具类则提供了在线程间交换数据的一种手段。
+
+## 8.1 等待多线程完成的 CountDownLatch
+
+CountDownLatch 允许一个或多个线程等待其他线程完成操作。
+
+假如有这样一个需求：我们需要解析一个Excel里多个 sheet的数据，此时可以考虑使用多线程，每个线程解析一个 sheet里的数据，等到所有的 sheet都解析完之后，程序需要提示解析完成。在这个需求中，要实现主线程等待所有线程完成 sheet的解析操作，
+
+最简单的做法是使用 join()方法，如代码清单 8-1所示。
+
+```java
+public class JoinCountDownLatchTest{
+    public static void main(String[] args) {
+        Thread paresr1 = new Thread(()->{});
+        Thread paresr2 = new Thread(()->{System.out.println("parser2 finish")});
+        paresr1.start();
+        paresr2.start();
+        paresr1.join();
+        paresr2.join();
+        System.out.println("all parser finish");
+    }
+}
+```
+
+
+join用于让当前执行线程等待join线程执行结束。其实现原理是不停检查 join线程是否存活，如果 join线程存活则让当前线程永远等待。其中，wait 0）表示永远等待下去，代码片段如下。
+
+```java
+while(isAlive()){
+    wait(0);
+}
+```
+直到join线程中止后，线程的 this.notifyAll()方法会被调用，调用 notifyAll()方法是在JVM里实现的，所以在 JDK里看不到，大家可以查看 JVM源码。
+
+在
+JDK 1.5之后的并发包中提供的 CountDownLatch也可以实现 join的功能，并且比join的功能更多，如代码清单 8-2所示。
+
+```java
+public class CountDownLatchTest {
+    static CountDownLatch c = new CountDownLatch(2);
+    public static void main(String[] args) throws InterruptedException {
+        new Thread(() -> {
+            System.out.println(1);
+            c.countDown();
+            System.out.println(2);
+            c.countDown();
+        }).start();
+        c.await();
+        System.out.println("3");
+    }
+}
+
+```
+
+CountDownLatch 的构造函数接收一个 int 类型的参数作为计数器，如果你想等待 N 个点完成，这里就传入 N。当我们调用 CountDownLatch 的 countDown 方法时，N 就会 减 1，CountDownLatch 的 await 方法会阻塞当前线程，直到 N 变成零。由于 countDown 方法可以用在任何地方，所以这里说的 N 个点，可以是 N 个线程，也可以是 1 个线程里 的 N 个执行步骤。用在多个线程时，只需要把这个 CountDownLatch 的引用传递到线程 里即可。 
+
+如果有某个解析 sheet 的线程处理得比较慢，我们不可能让主线程一直等待，所以可 以使用另外一个带指定时间的 await 方法——await（long time，TimeUnit unit），这个方 法等待特定时间后，就会不再阻塞当前线程。join 也有类似的方法。 
+
+
+计数器必须大于等于 0，只是等于 0 时候，计数器就是零，调用 await 方 法时不会阻塞当前线程。CountDownLatch 不可能重新初始化或者修改 CountDownLatch 对象的内部计数器的值。一个线程调用 countDown 方法 happen-before，另外一个线程调 用 await 方法。
+
+
+## 8.2 同步屏障 CyclicBarrier 
+
+CyclicBarrier 的字面意思是可循环使用（Cyclic）的屏障（Barrier）。它要做的事情 是，**让一组线程到达一个屏障（也可以叫同步点）时被阻塞**，**直到最后一个线程到达屏障时，屏障才会开门**，所有被屏障拦截的线程才会继续运行。
+
+### 8.2.1 CyclicBarrier简介
+
+CyclicBarrier默认的构造方法是 CyclicBarrier int parties），其参数表示屏障拦截的线程数量，每个线程调用 await方法告诉 CyclicBarrier我已经到达了屏障，然后当前线程被阻塞。示例代码如代码清单 8-3所示。
+
+```java
+public class CyclicBarrierTest {
+    static CyclicBarrier c = new CyclicBarrier(2);
+    public static void main(String[] args) {
+        new Thread(() -> {
+            try {
+                c.await();
+            } catch (Exception e) {
+            }
+            System.out.println(1);
+        }).start();
+        try {
+            c.await();
+        } catch (Exception e) {
+        }
+        System.out.println(2);
+    }
+}
+```
+因为主线程和子线程的调度是由CPU决定的，两个线程都有可能先执行，所以会产生两种输出，第一种可能输出如下。
+
+```
+1
+2
+```
+
+第二种可能输输出如下。出如下。
+```
+2
+1
+```
+
+如果把new CyclicBarrier(2)修改成 new CyclicBarrier(3)，则主线程和子线程会永远等待，因为没有第三个线程执行 await方法，即没有第三个线程到达屏障，所以之前到达屏障的两个线程都不会继续执行。
+
+CyclicBarrier还提供一个更高级的构造函数 CyclicBarrier int parties Runnable barrier-Action），用于在线程到达屏障时，优先执行 barrierAction，方便处理更复杂的业务场景，如代码清单 8-4所示。
+
+```java
+public class CyclicBarrierTest2 {
+    static CyclicBarrier c = new CyclicBarrier(2, new A());
+    public static void main(String[] args) {
+        new Thread(() -> {
+            try {
+                c.await();
+            } catch (Exception e) {
+            }
+            System.out.println(1);
+        }).start();
+        try {
+            c.await();
+        } catch (Exception e) {
+        }
+        System.out.println(2);
+    }
+    static class A implements Runnable {
+        @Override
+        public void run() {
+            System.out.println(3);
+        }
+    }
+}
+```
+
+因为CyclicBarrier设置了拦截线程的数量是 2，所以必须等代码中的第一个线程和线程 A都执行完之后，才会继续执行主线程，然后输出 2，所以代码执行后的输出如下。
+
+```
+3
+1
+2
+```
+
+### 8.2.2 CyclicBarrier的应用场景
+
+**CyclicBarrier可以用于多线程计算数据，最后合并计算结果的场景。**
+
+例如，用一个 Excel 保存了用户所有银行流水，每个 Sheet 保存一个账户近一年的每笔银行流水，现在 需要统计用户的日均银行流水，先用多线程处理每个 sheet 里的银行流水，都执行完之 后，得到每个 sheet 的日均银行流水，最后，再用 barrierAction 用这些线程的计算结果， 计算出整个 Excel 的日均银行流水，如代码清单 8-5 所示。
+
+
+### 8.2.3 CyclicBarrier 和 CountDownLatch 的区别 
+
+CountDownLatch 的计数器只能使用一次，**而 CyclicBarrier 的计数器可以使用 reset() 方法重置**。
+
+所以 **CyclicBarrier 能处理更为复杂的业务场景**。
+
+例如，如果计算发生错误， 可以重置计数器，并让线程重新执行一次。 CyclicBarrier 还提供其他有用的方法，比如 getNumberWaiting 方法可以获得 CyclicBarrier 阻塞的线程数量。isBroken()方法用来了解阻塞的线程是否被中断。
+
+## 8.3 控制并发线程数的 Semaphore
+
+
+**Semaphore（信号量）是用来控制同时访问特定资源的线程数量，它通过协调各个线程，以保证合理的使用公共资源**。
+
+**多年以来，我都觉得从字面上很难理解 Semaphore 所表达的含义，只能把它比作是 控制流量的红绿灯**。比如××马路要限制流量，只允许同时有一百辆车在这条路上行使， 其他的都必须在路口等待，所以前一百辆车会看到绿灯，可以开进这条马路，后面的车 会看到红灯，不能驶入××马路，但是如果前一百辆中有 5 辆车已经离开了××马路，那么 后面就允许有 5 辆车驶入马路，这个例子里说的车就是线程，驶入马路就表示线程在执 行，离开马路就表示线程执行完成，看见红灯就表示线程被阻塞，不能执行。
+
+**Semaphore 可以用于做流量控制，特别是公用资源有限的应用场景，比如数据库连接**。
+
+假如有一个需求，要读取几万个文件的数据，因为都是 IO 密集型任务，我们可以启 动几十个线程并发地读取，但是如果读到内存后，还需要存储到数据库中，而数据库的 连接数只有 10 个，这时我们必须控制只有 10 个线程同时获取数据库连接保存数据，否 则会报错无法获取数据库连接。这个时候，就可以使用 Semaphore 来做流量控制
+
+```java
+
+public class SemaphoreTest {
+    private static final int THREAD_COUNT = 30;
+    private static ExecutorService threadPool =
+            Executors.newFixedThreadPool(THREAD_COUNT);
+    private static Semaphore s = new Semaphore(10);
+    public static void main(String[] args) {
+        for (int i = 0; i < THREAD_COUNT; i++) {
+            threadPool.execute(() -> {
+                try {
+                    s.acquire();
+                    System.out.println(Thread.currentThread().getName()+" save data");
+                    SleepUtils.second(1);
+                    s.release();
+                } catch (InterruptedException e) {
+                }
+            });
+        }
+        threadPool.shutdown();
+    }
+}
+
+
+```
+
+
+## 8.4 线程间交换数据的 Exchanger
+
+Exchanger（交换者）是一个用于线程间协作的工具类。Exchanger 用于进行线程间的数据交换。它提供一个同步点，在这个同步点，两个线程可以交换彼此的数据。这两个线程通过 exchange 方法交换数据，如果第一个线程先执行 exchange()方法，它会一直 等待第二个线程也执行 exchange 方法，当两个线程都到达同步点时，这两个线程就可以 交换数据，将本线程生产出来的数据传递给对方。
+
+**Exchanger可以用于遗传算法，遗传算法里需要选出两个人作为交配对象，这时候会交换两人的数据，并使用交叉规则得出 2个交配结果**。 
+
+Exchanger也可以用于校对工作，比如我们需要将纸制银行流水通过人工的方式录入成电子银行流水，为了避免错误，采用AB岗两人进行录入，录入到 Excel之后，系统需要加载这两个 Excel，并对两个Excel数据进行校对，看看是否录入一致，代码如代码清单 8-8所示。
+
+```java
+
+public class ExchangerTest {
+    private static final Exchanger<String> exgr = new Exchanger<String>();
+    private static ExecutorService threadPool = Executors.newFixedThreadPool(2);
+
+    public static void main(String[] args) {
+        System.out.println(Runtime.getRuntime().availableProcessors());
+        threadPool.execute(() -> {
+            try {
+                String A = "银行流水 A"; // A 录入银行流水数据
+                exgr.exchange(A);
+            } catch (InterruptedException e) {
+            }
+        });
+        threadPool.execute(() -> {
+            try {
+                String B = "银行流水 B"; // B 录入银行流水数据
+                String A = exgr.exchange("B");
+                System.out.println("A 和 B 数据是否一致：" + A.equals(B) + "，A 录入的是："
+                        + A + "，B 录入是：" + B);
+            } catch (InterruptedException e) {
+            }
+        });
+        threadPool.shutdown();
+        /**
+         * 如果两个线程有一个没有执行 exchange()方法，则会一直等待，如果担心有特殊情
+         * 况发生，避免一直等待，可以使用 exchange（V x，longtimeout，TimeUnit unit）设置最
+         * 大等待时长。
+         */
+    }
+}
+
+```
+
+
+# 9. Java 中的线程池
+
+Java 中的线程池是运用场景最多的并发框架，几乎所有需要异步或并发执行任务的程序都可以使用线程池。
+
+在开发过程中，合理地使用线程池能够带来 3 个好处。 
+
+> ℹ️
+> 第一：降低资源消耗。通过重复利用已创建的线程降低线程创建和销毁造成的消耗。
+> 第二：提高响应速度。当任务到达时，任务可以不需要等到线程创建就能立即执行。 
+> 第三：提高线程的可管理性。
+
+
+**线程是稀缺资源，如果无限制地创建，不仅会消耗系统资源，还会降低系统的稳定性，使用线程池可以进行统一分配、调优和监控**。 但是，要做到合理利用线程池，必须对其实现原理了如指掌。
+
+
+## 9.1 线程池的实现原理 
+
