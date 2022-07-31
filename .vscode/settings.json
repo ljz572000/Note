@@ -1,5 +1,5 @@
 {
     "markdown.styles": [
-        ".vscode/github.css"
+        ".vscode/vue.css"
     ]
 }
