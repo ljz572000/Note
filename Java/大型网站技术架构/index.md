@@ -964,9 +964,31 @@ graph TD;
 
 **4．垃圾回收**
 
-如果Web应用运行在JVM 等具有垃圾回收功能的环境中,那么垃圾回收可能会对系统的性能特性产生巨大影响。理解垃圾回收机制有助于程序优化和参数调优，以及编写内存安全的代码。
-在JVM 分代垃圾回收机制中，将应用程序可用的堆空间分为年轻代( YoungGeneration)和年老代(Old Generation )，又将年轻代分为Eden 区( Eden Space )、From区和To区，新建对象总是在Eden 区
-中被创建，当Eden区空间已满，就触发一次YoungGC ( Garbage Collection，垃圾回收)，将还被使用的对象复制到From区，这样整个Eden区都是未被使用的空间,可供继续创建对象，当Eden区再次用
-完,再触发一次Young GC,将Eden区和From区还在被使用的对象复制到To区，下一次Young GC则是将Eden区和To区还被使用的对象复制到From区。因此,经过多次Young GC，某些对象会在From区和
-To区多次复制，如果超过某个阈值对象还未被释放，则将该对象复制到OldGeneration。如果Old Generation空间也已用完，那么就会触发Full GC，即所谓的全量回收，全量回收会对系统性能产生较大
-影响，因此应根据系统业务特点和对象生命周期，合理设置Young Generation和Old Generation大小，尽量减少Full GC。事实上，某些Web应用在整个运行期间可以做到从不进行Full GC。
+如果Web应用运行在JVM 等具有垃圾回收功能的环境中,那么垃圾回收可能会对系统的性能特性产生巨大影响。
+
+以JVM为例，其内存主要可划分为堆（heap）和堆栈（stack）。堆栈用于存储线程上下文信息。如方法参数、局部变量等。堆则是存储对象的内存空间，对象的创建和释放、垃圾回收就在这里进行。通过对对象生命周期的观察，发现大部分对象的生命周期都极其短暂，这部分对象产生的垃圾应该就更快地收集，以释放内存，这就是JVM分代垃圾回收，其基本原理如图4.17所示。
+
+![](./images/4-17.PNG)
+
+**理解垃圾回收机制有助于程序优化和参数调优，以及编写内存安全的代码**。
+
+```mermaid
+graph TD;
+    A[堆空间]-->B[年轻代];
+    A[堆空间]-->C[年老代];
+    B[年轻代]-->D[Eden 区];
+    B[年轻代]-->E[From 区];
+    B[年轻代]-->F[To 区];
+```
+
+在JVM 分代垃圾回收机制中，将应用程序可用的堆空间分为年轻代( YoungGeneration)和年老代(Old Generation )，又将年轻代分为Eden 区( Eden Space )、From区和To区.
+
+新建对象总是在Eden 区中被创建，当Eden区空间已满，就触发一次YoungGC ( Garbage Collection，垃圾回收)，将**还被使用的对象复制到From区**，这样整个Eden区都是未被使用的空间,可供继续创建对象
+
+当Eden区再次用完,再触发一次Young GC,**将Eden区和From区还在被使用的对象复制到To区**，下一次**Young GC则是将Eden区和To区还被使用的对象复制到From区**。
+
+**因此,经过多次Young GC，某些对象会在From区和To区多次复制，如果超过某个阈值对象还未被释放，则将该对象复制到OldGeneration**。
+
+如果**Old Generation**空间也已用完，那么就会触发Full GC，即所谓的全量回收，全量回收会对系统性能产生较大影响，因此应根据系统业务特点和对象生命周期，合理设置Young Generation和Old Generation大小，尽量减少Full GC。
+
+事实上，**某些Web应用在整个运行期间可以做到从不进行Full GC**。
