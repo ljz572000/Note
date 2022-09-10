@@ -25,6 +25,8 @@ https://packages.aliyun.com/maven
 
 总的来说技术变化更新都比较快，得跟上技术的发展。一般来说没用使用springcloud话可以选择Retrofit，如果使用了springcloud可以使用OpenFeign+okHttp。
 
+[jersey-rest-client-with-apache-http-client-4-5-vs-retrofit](https://stackoverflow.com/questions/42199614/jersey-rest-client-with-apache-http-client-4-5-vs-retrofit)
+
 
 ---
 
