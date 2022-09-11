@@ -145,4 +145,6 @@ tencentcloud-sdk-java
 - [Xerces2](https://xerces.apache.org/)
     - Xerces2 在 Apache Xerces 系列中提供了高性能、完全兼容的 XML 解析器。
 
+- [uni-app](https://github.com/dcloudio/uni-app)
+
 
