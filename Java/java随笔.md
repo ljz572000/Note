@@ -50,10 +50,97 @@ https://www.ehcache.org/
 
 # yudao Learn
 
-- [Knife4j](https://doc.xiaominfo.com/)
 
-- [MapStruct](https://mapstruct.org/documentation/stable/reference/html/)
 
-- [redisson](https://github.com/redisson/redisson)
+## Web 相关
 
-- [apollo](https://github.com/apolloconfig/apollo)
+[Knife4j](https://doc.xiaominfo.com/)
+
+## DB 相关
+
+[redisson](https://github.com/redisson/redisson)
+
+## Config 配置中心相关
+
+[apollo](https://github.com/apolloconfig/apollo)
+
+## 服务保障相关
+
+[lock4j](https://gitee.com/baomidou/lock4j)
+
+[resilience4j](https://github.com/resilience4j/resilience4j)
+
+Resilience4j是一款轻量级，易于使用的容错库.
+
+## 监控相关
+
+[skywalking](https://skywalking.apache.org/)
+
+skywalking 是一个国产开源框架，2015年由个人吴晟（华为开发者）开源 ， 2017年加入Apache孵化器，skywalking是分布式系统的应用程序性能监视工具，专为微服务、云原生架构和基于容器（Docker、K8s、Mesos）架构而设计。SkyWalking 是观察性分析平台和应用性能管理系统。提供分布式追踪、服务网格遥测分析、度量聚合和可视化一体化解决方案
+
+[spring-boot-admin](https://github.com/codecentric/spring-boot-admin)
+
+
+[opentracing](https://github.com/opentracing)
+
+## Test
+
+[podam](http://mtedone.github.io/podam/)
+
+[jedis-mock](https://github.com/fppt/jedis-mock)
+
+[mockito](https://github.com/mockito/mockito)
+
+## Bpm工作流
+
+[flowable](https://www.flowable.com/open-source/docs/bpmn/ch05a-Spring-Boot/)
+
+## 工具类
+
+[MapStruct](https://mapstruct.org/documentation/stable/reference/html/)
+
+**加解密**
+
+[jasypt](http://www.jasypt.org/)
+
+**代码生成**
+
+[velocity-engine-core](https://velocity.apache.org/)
+
+- [screwv](https://gitee.com/leshalv/screw)
+    - 简洁好用的数据库表结构文档生成工具
+
+- [guava](https://guava.dev/)
+
+    - Guava 是一组来自 Google 的核心 Java 库，其中包括新的集合类型（例如 multimap 和 multiset）、不可变集合、图形库以及用于并发、I/O、散列、缓存、原语、字符串等的实用程序！它广泛用于 Google 内部的大多数 Java 项目，也被许多其他公司广泛使用。
+
+- [guice](https://www.jianshu.com/p/7fba7b43146a)
+    - Google Guice 一个轻量级的依赖注入框架
+
+- [TransmittableThreadLocal](https://github.com/alibaba/transmittable-thread-local)
+
+- [commons-net网络开发包](https://commons.apache.org/proper/commons-net/)
+    - 解决 ftp 连接 
+
+- [jsch](http://www.jcraft.com/jsch/)
+    - 解决 sftp 连接
+
+- [Apache Tika - a content analysis toolkit](https://tika.apache.org/)
+
+- [行为验证码](https://github.com/anji-plus/captcha)
+
+- [社交登陆](https://gitee.com/justauth/justauth-spring-boot-starter)
+
+- 短信验证码SMS SDK
+
+```
+yunpian-java-sdk
+aliyun-java-sdk-core
+aliyun-java-sdk-dysmsapi
+tencentcloud-sdk-java
+```
+
+- [积木报表](http://www.jimureport.com/)
+
+
+
