@@ -4,7 +4,7 @@ maven 当前仓库使用阿里免费的仓库进行发布，免去了自建 nexu
 
 https://packages.aliyun.com/maven
 
-<<<<<<< HEAD
+
 # 七大主流的 HttpClient 程序对比
 
 |                   | 优点                 | 缺点                                                                   |
@@ -35,7 +35,7 @@ https://packages.aliyun.com/maven
 https://www.ehcache.org/
 
 待学习
->>>>>>> 55d2ac8902fef17b1ef2310873932f5c442c0a0c
+
 
 # 浅拷贝与深拷贝的区别
 
@@ -47,3 +47,11 @@ https://www.ehcache.org/
 
 深浅克隆都会在堆中新创建一个对象；
 区别在于对象属性引用的对象是否也进行了克隆（递归性的，深的克隆，浅的不克隆）；
+
+# yudao Learn
+
+- [Knife4j](https://doc.xiaominfo.com/)
+
+- [MapStruct](https://mapstruct.org/documentation/stable/reference/html/)
+
+- [redisson](https://github.com/redisson/redisson)
