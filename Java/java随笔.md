@@ -148,3 +148,4 @@ tencentcloud-sdk-java
 - [uni-app](https://github.com/dcloudio/uni-app)
 
 
+- [微信开发 Java SDK](https://github.com/Wechat-Group/WxJava)
