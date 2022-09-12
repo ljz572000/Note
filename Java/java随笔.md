@@ -147,7 +147,22 @@ tencentcloud-sdk-java
 
 - [uni-app](https://github.com/dcloudio/uni-app)
 
-[什么是DTO ，DTO 有什么作用](https://blog.csdn.net/weixin_34059951/article/details/92613242)
+
 
 
 - [微信开发 Java SDK](https://github.com/Wechat-Group/WxJava)
+
+
+## PO vo DTO
+
+[什么是DTO ，DTO 有什么作用](https://blog.csdn.net/weixin_34059951/article/details/92613242)
+
+
+一、PO:persistant object 持久对象
+可以看成是与数据库中的表相映射的java对象。使用Hibernate来生成PO是不错的选择。
+ 
+二、VO:value object值对象。
+通常用于业务层之间的数据传递，和PO一样也是仅仅包含数据而已。但应是抽象出的业务对象
+可以和表对应,也可以不,这根据业务的需要.
+
+三、用于表现层和应用层之间的数据交互
