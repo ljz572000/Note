@@ -150,3 +150,4 @@ tencentcloud-sdk-java
 [什么是DTO ，DTO 有什么作用](https://blog.csdn.net/weixin_34059951/article/details/92613242)
 
 
+- [微信开发 Java SDK](https://github.com/Wechat-Group/WxJava)
