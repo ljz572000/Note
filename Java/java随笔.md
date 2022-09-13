@@ -178,3 +178,5 @@ tencentcloud-sdk-java
 2. [Java 常用函数式接口之Consumer接口](https://www.cnblogs.com/liyihua/p/12286086.html)
 
 3. [@SuppressWarnings注解用法详解](https://blog.csdn.net/xiaohanzhong/article/details/80886560)
+
+4. [Spring AOP 工具类](http://www.bubuko.com/infodetail-3471885.html)
