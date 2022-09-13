@@ -176,3 +176,5 @@ tencentcloud-sdk-java
 1. 空构造方法，解决反序列化
 
 2. [Java 常用函数式接口之Consumer接口](https://www.cnblogs.com/liyihua/p/12286086.html)
+
+3. [@SuppressWarnings注解用法详解](https://blog.csdn.net/xiaohanzhong/article/details/80886560)
