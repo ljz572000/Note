@@ -156,7 +156,7 @@ tencentcloud-sdk-java
 ## PO vo DTO
 
 [什么是DTO ，DTO 有什么作用](https://blog.csdn.net/weixin_34059951/article/details/92613242)
-
+[一遍文章搞清楚VO、DTO、DO、PO的概念、区别](https://developer.aliyun.com/article/715619)
 
 一、PO:persistant object 持久对象
 可以看成是与数据库中的表相映射的java对象。使用Hibernate来生成PO是不错的选择。
