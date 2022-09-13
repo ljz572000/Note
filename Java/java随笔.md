@@ -99,6 +99,11 @@ skywalking 是一个国产开源框架，2015年由个人吴晟（华为开发�
 
 [MapStruct](https://mapstruct.org/documentation/stable/reference/html/)
 
+- [guava](https://guava.dev/)
+
+    - Guava 是一组来自 Google 的核心 Java 库，其中包括新的集合类型（例如 multimap 和 multiset）、不可变集合、图形库以及用于并发、I/O、散列、缓存、原语、字符串等的实用程序！它广泛用于 Google 内部的大多数 Java 项目，也被许多其他公司广泛使用。
+
+
 **加解密**
 
 [jasypt](http://www.jasypt.org/)
@@ -110,9 +115,6 @@ skywalking 是一个国产开源框架，2015年由个人吴晟（华为开发�
 - [screwv](https://gitee.com/leshalv/screw)
     - 简洁好用的数据库表结构文档生成工具
 
-- [guava](https://guava.dev/)
-
-    - Guava 是一组来自 Google 的核心 Java 库，其中包括新的集合类型（例如 multimap 和 multiset）、不可变集合、图形库以及用于并发、I/O、散列、缓存、原语、字符串等的实用程序！它广泛用于 Google 内部的大多数 Java 项目，也被许多其他公司广泛使用。
 
 - [guice](https://www.jianshu.com/p/7fba7b43146a)
     - Google Guice 一个轻量级的依赖注入框架
