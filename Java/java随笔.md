@@ -103,6 +103,8 @@ skywalking 是一个国产开源框架，2015年由个人吴晟（华为开发�
 
     - Guava 是一组来自 Google 的核心 Java 库，其中包括新的集合类型（例如 multimap 和 multiset）、不可变集合、图形库以及用于并发、I/O、散列、缓存、原语、字符串等的实用程序！它广泛用于 Google 内部的大多数 Java 项目，也被许多其他公司广泛使用。
 
+    - [Guava Cache简介、应用场景分析、代码实现以及核心的原理](https://blog.csdn.net/weixin_44795847/article/details/123702038)
+
 
 **加解密**
 
