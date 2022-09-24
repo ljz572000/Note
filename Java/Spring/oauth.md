@@ -24,3 +24,34 @@ https://www.iocoder.cn/Fight/ruanyifeng-oauth_2_0/?self
 OAuth就是为了解决上面这些问题而诞生的。
 
 # 名词定义
+
+- **Third-party application**：第三方应用程序，本文中又称"客户端"（client），即上一节例子中的"云冲印"。
+
+- **HTTP service**：HTTP服务提供商，本文中简称"服务提供商"，即上一节例子中的Google。
+
+- **Resource Owner**：资源所有者，本文中又称"用户"（user）
+
+- **User Agent**：用户代理，本文中就是指浏览器。
+
+- **Authorization server**：认证服务器，即服务提供商专门用来处理认证的服务器。
+
+- **Resource server**：资源服务器，即服务提供商存放用户生成的资源的服务器。它与认证服务器，可以是同一台服务器，也可以是不同的服务器。
+
+# OAuth的思路
+
+OAuth在"客户端"与"服务提供商"之间，设置了一个授权层（authorization layer）。"客户端"不能直接登录"服务提供商"，只能登录授权层，以此将用户与客户端区分开来。
+
+"客户端"登录授权层所用的令牌（token），与用户的密码不同。用户可以在登录的时候，指定授权层令牌的权限范围和有效期。
+
+"客户端"登录授权层以后，"服务提供商"根据令牌的权限范围和有效期，向"客户端"开放用户储存的资料。
+
+# 客户端的授权模式
+
+- 授权码模式（authorization code）
+
+- 简化模式（implicit）
+
+- 密码模式（resource owner password credentials）
+
+- 客户端模式（client credentials）
+
