@@ -169,3 +169,99 @@ startActivity(intent);
 ## Activity之间数据交换
 
 Intent可以用来启动Activity，也可以用来在Activity之间传递数据。使用Intent传递数据只需要调用Intent提供的`putExtra（String name, Xxx data）`方法
+
+
+# 启动图标制作
+
+1. res--->new--->`ImageAsset`
+
+![图标制作](images/图标制作.png)
+
+2. 修改`app/src/main/AndroidManifest.xml` 文件
+
+```xml
+ <application
+android:icon="@mipmap/campus_launcher"
+android:roundIcon="@mipmap/campus_launcher_round"
+ </application>
+```
+
+# 制作Android Splash闪屏
+
+当我们的APP已经启动但尚未在内存中时，用户点击app图标启动应用程序于实际调用启动程序Activity的`onCreate()`之间可能会有一些延迟，在“冷启动”期间，`WindowManager`尝试使用应用程序主题中的元素（如`windowBackground`）绘制占位符UI。因此，我们可以将其更改为显示启动的drawable, 而不是显示默认的`windowBackground`(通常为白色或黑色)。这样，启动画面仅在需要时显示,而且不会减慢用户启动APP数据。
+
+# Android 客户端开发
+
+Android客户端代码包说明
+
+| 包名                                | 说明                                       |
+| ----------------------------------- | ------------------------------------------ |
+| cn.sharesdk.onekeyshare             | 社会化分享依赖包                           |
+| food.neusoft.com.food               | 总包                                       |
+| food.neusoft.com.food.activity      | 存放所有的Activity类                       |
+| food.neusoft.com.food.adapter       | 存放适配器类                               |
+| food.neusoft.com.food.domain        | 存放相关的实体类，如商品信息、订单信息等   |
+| food.neusoft.com.food.Fragment.main | 存放Fragment类，Fragment主要用于页面的导航 |
+| food.neusoft.com.food.thread        | 线程，网络相关的工具类                     |
+| food.neusoft.com.food.utils         | 通用工具包                                 |
+| food.neusoft.com.food.view          | 自定义控件，自定义ViewPager顶部轮播图      |
+| food.neusoft.com.food.widget        | 自定义组件                                 |
+| food.neusoft.com.food.wxapi         | 微信API,项目集成微信时采用                 |
+
+## Android框架使用
+
+### AsyncHttpClient 框架
+
+​	AsyncHttpClient 基于Apache HttpClient, 所有的请求都独立在UI主线程之外，通过回调方法处理请求结果，采用**Handler**机制传递信息。
+
+​	创建异步请求，一般使用静态的HttpClient 对象，调用相应的方法，通常涉及**AsyncHttpClient**, **RequestParams**, **AsyncHttpResponseHandler** 3个类的使用。
+
+​	**AsyncHttpClient**类通常用于在Android应用程序中创建异步请求，如GET、POST、PUT 和 DELETE 等，请求参数通过RequestParams实例创建，响应通过重写匿名内部类ResponseHandlerInterface的方法处理。使用AsyncHttpClient执行网络请求时，最终都会调用sendRequest（）方法，在这个方法内部将请求参数封装成AsyncHttpRequest交由内部的线程池执行。
+
+​	**RequestParams**类用于创建AsyncHttpClient 实例中请求参数的集合，参数可以是String、File和InputStream等等。
+
+​	**AsyncHttpResponseHandler**继承自ResponseHandlerInterface类，主要用于拦截和处理由AsyncHttpClient创建的请求。在匿名类AsyncHttpResponseHandler中重写`onSuccess(int, org.apache.http.Header[],byte[],Throwable)`, onStart(), onFinish(), onRetry() 和 onProgress(int, int)等方法。
+
+# Android Http 通信
+
+要在您的应用中执行网络操作，您的清单必须包含以下权限
+
+```xml
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+```
+
+## 设计安全的网络通信
+
+在向应用添加网络功能之前，您需要确保应用中的数据和信息在通过网络传输时处于安全状态。为此，请遵循以下网络安全最佳做法
+
+* 最大限度地减少您通过网络传输的敏感或个人[用户数据](https://developer.android.google.cn/training/articles/security-tips.html#UserData)的数量
+* 通过 [SSL](https://developer.android.google.cn/training/articles/security-ssl.html) 发送来自您应用的所有网络流量
+* 考虑创建一个[网络安全配置](https://developer.android.google.cn/training/articles/security-config.html)，该配置允许您的应用信任自定义 CA 或限制在安全通信方面取得其信任的系统 CA 集。
+
+Android 对于Http 网络通信，提供了标准的Java接口——`HttpURLConnection`接口和Apache的接口——`HttpClient`接口。
+
+## URL 加载网络资源
+
+URL类提供了多个构造器用于创建URL对象。
+
+获得对象后，可以使用下列表所示的方法来访问该URL资源。
+
+| 方法                           | 说明                                               |
+| ------------------------------ | -------------------------------------------------- |
+| String getFile()               | 获取此URL的资源名                                  |
+| String getHost()               | 获取此URL的主机名                                  |
+| String getPath()               | 获取此URL的路径部分                                |
+| int getPort()                  | 获取此URL的端口号                                  |
+| String getProtocol()           | 获取此URL的协议名                                  |
+| String getQuery()              | 获取此URL的查询字符串部分                          |
+| URLConnection openConnection() | 表示到URL所用引用的远程对象的连接                  |
+| InputStream openStream()       | 打开与此URL的连接，返回用于读取该资源的InputStream |
+
+使用URL加载网络资源的一般步骤如下
+
+1. 获取URL对象。
+2. 调取openStream() 方法打开URL的连接，获取URL的资源输入流。
+3. 通过输入流InputStream进行文件读写。
+4. 关闭输入流。
+
