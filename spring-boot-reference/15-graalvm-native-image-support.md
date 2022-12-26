@@ -233,7 +233,7 @@ When such situation arise, Spring can write a reflection hint so that GraalVM kn
 
 Hint files are genrated under `META-INF/native-image` where they are automatically picked up by GraalVM.
 
-**### 1.2.3. **Proxy Class Generation**
+### 1.2.3. **Proxy Class Generation**
 
 Spring sometimes needs to generate proxy classes to enhance the code you're written with additional featured. To do this, it uses the cglib library which directly generates bytecode.
 
