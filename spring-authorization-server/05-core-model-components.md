@@ -39,22 +39,85 @@ RegisteredClient registeredClient = RegisteredClient.withId(UUID.randomUUID().to
 The corresponding configuration in Spring Security’s OAuth2 Client support is:
 
 ```yaml
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          client-a:
+            provider: spring
+            client-id: client-a
+            client-secret: secret
+            authorization-grant-type: authorization_code
+            redirect-uri: "http://127.0.0.1:8080/authorized"
+            scope: scope-a
+        provider:
+          spring:
+            issuer-uri: http://localhost:9000
 ```
+
+A `RegisteredClient` has metadata (attributes) associated with its unique Client Identifier and is defined as follows:
+
+```java
+public class RegisteredClient implements Serializable {
+	private String id;  (1)
+	private String clientId;    (2)
+	private Instant clientIdIssuedAt;   (3)
+	private String clientSecret;    (4)
+	private Instant clientSecretExpiresAt;  (5)
+	private String clientName;  (6)
+	private Set<ClientAuthenticationMethod> clientAuthenticationMethods;    (7)
+	private Set<AuthorizationGrantType> authorizationGrantTypes;    (8)
+	private Set<String> redirectUris;   (9)
+	private Set<String> scopes; (10)
+	private ClientSettings clientSettings;  (11)
+	private TokenSettings tokenSettings;    (12)
+
+	...
+
+}
+```
+
+1. `id`: The ID that uniquely identifies the `RegisteredClient`.
+2. `clientId`: The client identifier.
+3. `clientIdIssuedAt`: The time at which the client identifier was issued.
+4. `clientSecret`: The client’s secret. The value should be encoded using Spring Security’s PasswordEncoder.
+5. `clientSecretExpiresAt`: The time at which the client secret expires.
+6. `clientName`: A descriptive name used for the client. The name may be used in certain scenarios, such as when displaying the client name in the consent page.
+7. `clientAuthenticationMethods`: The authentication method(s) that the client may use. The supported values are `client_secret_basic`, `client_secret_post`, `private_key_jwt`, `client_secret_jwt`, and `none` (public clients).
+8. `authorizationGrantTypes`: The authorization grant type(s) that the client can use. The supported values are `authorization_code`, `client_credentials`, and `refresh_token`.
+9. `redirectUris`: The registered redirect URI(s) that the client may use in redirect-based flows – for example, `authorization_code` grant.
+10. `scopes`: The scope(s) that the client is allowed to request.
+11. `clientSettings`: The custom settings for the client – for example, require PKCE, require authorization consent, and others.
+12. `tokenSettings`: The custom settings for the OAuth2 tokens issued to the client – for example, access/refresh token time-to-live, reuse refresh tokens, and others.
 
 ## RegisteredClientRepository
 
+
+The `RegisteredClientRepository` is the central component where new clients can be registered and existing clients can be queried. 
+
 `RegisteredClientRepository` 是可以注册新客户端和查询现有客户端的中心组件。
+
+It is used by other components when following a specific protocol flow, such as client authentication, authorization grant processing, token introspection, dynamic client registration, and others.
 
 在遵循特定的协议流程时，它被其他组件使用，如客户端认证、授权授予处理、令牌反省、动态客户端注册等。
 
+The provided implementations of `RegisteredClientRepository` are `InMemoryRegisteredClientRepository` and `JdbcRegisteredClientRepository`. 
+
 `RegisteredClientRepository` 提供的实现是 `InMemoryRegisteredClientRepository` 和 `JdbcRegisteredClientRepository`。 
 
+The `InMemoryRegisteredClientRepository` implementation stores `RegisteredClient` instances in-memory and is recommended ONLY to be used during development and testing.
+
 `InMemoryRegisteredClientRepository` 实现将 `RegisteredClient` 实例存储在内存中， 建议仅在开发和测试期间使用。 
+
+`JdbcRegisteredClientRepository` is a JDBC implementation that persists `RegisteredClient` instances by using JdbcOperations.
 
 `JdbcRegisteredClientRepository` 是一个 JDBC 实现，它使用 `JdbcOperations` 持久化 `RegisteredClient` 实例。
 
 > Note
 > RegisteredClientRepository 是一个必需的组件。
+
+The following example shows how to register a `RegisteredClientRepository` `@Bean`:
 
 以下示例显示了如何注册 `RegisteredClientRepository` `@Bean`：
 
@@ -65,6 +128,8 @@ public RegisteredClientRepository registeredClientRepository() {
 	return new InMemoryRegisteredClientRepository(registrations);
 }
 ```
+
+Alternatively, you can configure the `RegisteredClientRepository` through the `OAuth2AuthorizationServerConfigurer`:
 
 或者，您可以通过 OAuth2AuthorizationServerConfigurer 配置 RegisteredClientRepository：
 
@@ -88,22 +153,37 @@ public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity h
 
 # OAuth2Authorization
 
+An `OAuth2Authorization` is a representation of an OAuth2 authorization, which holds state related to the authorization granted to a client, by the resource owner or itself in the case of the `client_credentials` authorization grant type.
+
 OAuth2Authorization是一个OAuth2授权的表示，它持有与授予客户的授权有关的状态，由资源所有者授予，或者在client_credentials授权类型的情况下由其本身授予。
 
 > Tips
 > Spring Security 的 OAuth2 Client 支持中对应的授权模型是 OAuth2AuthorizedClient。
+>
+
+After the successful completion of an authorization grant flow, an `OAuth2Authorization` is created and associates an `OAuth2AccessToken`, an (optional) `OAuth2RefreshToken`, and additional state specific to the executed authorization grant type.
 
 成功完成授权授权流程后，将创建 `OAuth2Authorization` 并将 `OAuth2AccessToken`、（可选）`OAuth2RefreshToken` 和特定于已执行授权授权类型的附加状态相关联。
 
+The `OAuth2Token` instances associated with an `OAuth2Authorization` vary, depending on the authorization grant type.
+
 与 OAuth2Authorization 关联的 OAuth2Token 实例会有所不同，具体取决于授权授予类型。
+
+For the OAuth2 `authorization_code grant`, an `OAuth2AuthorizationCode`, an `OAuth2AccessToken`, and an (optional) `OAuth2RefreshToken` are associated.
 
 对于 OAuth2 授权码授权，一个 OAuth2AuthorizationCode、一个 OAuth2AccessToken 和一个（可选的）OAuth2RefreshToken 是相关联的。
 
+For the OpenID Connect 1.0 `authorization_code` grant, an `OAuth2AuthorizationCode`, an `OidcIdToken`, an `OAuth2AccessToken`, and an (optional) `OAuth2RefreshToken` are associated.
+
 对于 OpenID Connect 1.0 授权码授权，OAuth2AuthorizationCode、OidcIdToken、OAuth2AccessToken 和（可选）OAuth2RefreshToken 相关联。
+
+For the OAuth2 `client_credentials` grant, only an `OAuth2AccessToken` is associated.
 
 对于 OAuth2 client_credentials 授权，仅关联一个 OAuth2AccessToken。
 
-OAuth2Authorization 及其属性定义如下：
+`OAuth2Authorization` and its attributes are defined as follows:
+
+`OAuth2Authorization` 及其属性定义如下：
 
 ```java
 public class OAuth2Authorization implements Serializable {
@@ -119,45 +199,74 @@ public class OAuth2Authorization implements Serializable {
 }
 ```
 
-- id：唯一标识 OAuth2Authorization 的 ID。
 
-- registeredClientId：唯一标识RegisteredClient的ID。
+1. `id`: The ID that uniquely identifies the OAuth2Authorization.
+2. `registeredClientId`: The ID that uniquely identifies the RegisteredClient.
+3. `principalName`: The principal name of the resource owner (or client).
+4. `authorizationGrantType`: The AuthorizationGrantType used.
+5. `authorizedScopes`: The Set of scope(s) authorized for the client.
+6. `tokens`: The OAuth2Token instances (and associated metadata) specific to the executed authorization grant type.
+7. `attributes`: The additional attributes specific to the executed authorization grant type – for example, the authenticated Principal, OAuth2AuthorizationRequest, and others.
 
-- principalName：资源所有者（或客户端）的主体名称。
 
-- authorizationGrantType：使用的 AuthorizationGrantType。
+1. id：唯一标识 OAuth2Authorization 的 ID。
 
-- tokens：特定于执行的授权授予类型的 OAuth2Token 实例（和关联的元数据）。
+2. registeredClientId：唯一标识RegisteredClient的ID。
 
-- attributes：特定于已执行授权授予类型的附加属性——例如，已验证的 Principal、OAuth2AuthorizationRequest、授权范围等。
+3. principalName：资源所有者（或客户端）的主体名称。
+
+4. authorizationGrantType：使用的 AuthorizationGrantType。
+
+5. tokens：特定于执行的授权授予类型的 OAuth2Token 实例（和关联的元数据）。
+
+6. attributes：特定于已执行授权授予类型的附加属性——例如，已验证的 Principal、OAuth2AuthorizationRequest、授权范围等。
+
+`OAuth2Authorization` and its associated `OAuth2Token` instances have a set lifespan. 
 
 OAuth2Authorization 及其关联的 OAuth2Token 实例具有固定的生命周期。
 
+A newly issued `OAuth2Token` is active and becomes inactive when it either expires or is invalidated (revoked). 
+
 新发布的 OAuth2Token 处于活动状态，并在过期或失效（撤销）时变为非活动状态。
+
+The `OAuth2Authorization` is (implicitly) inactive when all associated `OAuth2Token` instances are inactive. 
 
 当所有关联的 OAuth2Token 实例都处于非活动状态时，OAuth2Authorization （隐式）处于非活动状态。
 
-每个 OAuth2Token 都保存在一个 OAuth2Authorization.
+Each `OAuth2Token` is held in an `OAuth2Authorization.Token`, which provides accessors for `isExpired()`, `isInvalidated()`, and `isActive().`
 
-Token 中，它为 **isExpired()**、**isInvalidated()** 和 **isActive()** 提供访问器。
+每个 `OAuth2Token` 都保存在一个 `OAuth2Authorization.Token` 中，它为 **isExpired()**、**isInvalidated()** 和 **isActive()** 提供访问器。
 
-OAuth2Authorization.Token 还提供 getClaims()，它返回与 OAuth2Token 关联的声明（如果有）。
+`OAuth2Authorization.Token` also provides `getClaims()`, which returns the claims (if any) associated with the `OAuth2Token`.
+
+`OAuth2Authorization.Token` 还提供 `getClaims()`，它返回与 `OAuth2Token` 关联的声明（如果有）。
 
 # OAuth2AuthorizationService
 
-OAuth2AuthorizationService 是存储新授权和查询现有授权的中心组件。
+The `OAuth2AuthorizationService` is the central component where new authorizations are stored and existing authorizations are queried. 
+
+`OAuth2AuthorizationService` 是存储新授权和查询现有授权的中心组件。
+
+It is used by other components when following a specific protocol flow – for example, client authentication, authorization grant processing, token introspection, token revocation, dynamic client registration, and others.
 
 在遵循特定的协议流程时，它被其他组件使用--例如，客户端认证、授权授予处理、令牌反省、令牌撤销、动态客户端注册等。
 
+The provided implementations of `OAuth2AuthorizationService` are `InMemoryOAuth2AuthorizationService` and `JdbcOAuth2AuthorizationService`. 
+
 `OAuth2AuthorizationService` 提供的实现是 `InMemoryOAuth2AuthorizationService` 和 `JdbcOAuth2AuthorizationService`。
 
+ The `InMemoryOAuth2AuthorizationService` implementation stores `OAuth2Authorization` instances in-memory and is recommended ONLY to be used during development and testing.
+
 `InMemoryOAuth2AuthorizationService` 实现将 `OAuth2Authorization` 实例存储在内存中，建议仅在开发和测试期间使用。
+
+`JdbcOAuth2AuthorizationService` is a JDBC implementation that persists `OAuth2Authorization` instances by using `JdbcOperations`.
 
 `JdbcOAuth2AuthorizationService` 是一个 JDBC 实现，它使用 `JdbcOperations` 持久化 `OAuth2Authorization` 实例。
 
 > Note
 > OAuth2AuthorizationService 是一个可选组件，默认为 InMemoryOAuth2AuthorizationService。
 
+The following example shows how to register an `OAuth2AuthorizationService` `@Bean`:
 
 以下示例显示如何注册 OAuth2AuthorizationService @Bean：
 
@@ -168,7 +277,9 @@ public OAuth2AuthorizationService authorizationService() {
 }
 ```
 
-或者，您可以通过 OAuth2AuthorizationServerConfigurer 配置 OAuth2AuthorizationService：
+Alternatively, you can configure the `OAuth2AuthorizationService` through the `OAuth2AuthorizationServerConfigurer`:
+
+或者，您可以通过 `OAuth2AuthorizationServerConfigurer` 配置 `OAuth2AuthorizationService`：
 
 ```java
 @Bean
@@ -188,11 +299,19 @@ public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity h
 
 # OAuth2AuthorizationConsent
 
+An `OAuth2AuthorizationConsent` is a representation of an authorization "consent" (decision) from an OAuth2 authorization request flow – for example, the `authorization_code` grant, which holds the authorities granted to a client by the resource owner.
+
 `OAuth2AuthorizationConsent` 是来自 `OAuth2` 授权请求流的授权“同意”（决定）的表示 - 例如，`authorization_code` 授权，它持有资源所有者授予客户端的权限。
+
+When authorizing access to a client, the resource owner may grant only a subset of the authorities requested by the client. The typical use case is the authorization_code grant flow, in which the client requests scope(s) and the resource owner grants (or denies) access to the requested scope(s).
 
 当授权对客户端的访问时，资源所有者可以仅授予客户端请求的权限的子集。典型的用例是授权代码授权流程，其中客户端请求范围，资源所有者授予（或拒绝）对所请求范围的访问权限。
 
+After the completion of an OAuth2 authorization request flow, an `OAuth2AuthorizationConsent` is created (or updated) and associates the granted authorities with the client and resource owner.
+
 在完成 `OAuth2` 授权请求流程后，将创建（或更新）`OAuth2AuthorizationConsent` 并将授予的权限与客户端和资源所有者相关联。
+
+`OAuth2AuthorizationConsent` and its attributes are defined as follows:
 
 OAuth2AuthorizationConsent 及其属性定义如下：
 
@@ -207,13 +326,25 @@ public final class OAuth2AuthorizationConsent implements Serializable {
 }
 ```
 
-- registeredClientId：唯一标识RegisteredClient的ID。
-- principalName：资源所有者的主体名称。
-- 权限：资源所有者授予客户端的权限。权限可以表示范围、声明、权限、角色等。
+1. registeredClientId：唯一标识RegisteredClient的ID。
+2. principalName：资源所有者的主体名称。
+3. 权限：资源所有者授予客户端的权限。权限可以表示范围、声明、权限、角色等。
+
+1. registeredClientId: The ID that uniquely identifies the RegisteredClient.
+2. principalName: The principal name of the resource owner.
+3. authorities: The authorities granted to the client by the resource owner. An authority can represent a scope, a claim, a permission, a role, and others.
 
 # OAuth2AuthorizationConsentService(可选的)
 
-`OAuth2AuthorizationConsentService` 是存储新授权同意和查询现有授权同意的中心组件。它主要由实现 OAuth2 授权请求流的组件使用——例如，authorization_code 授权。
+The `OAuth2AuthorizationConsentService` is the central component where new authorization consents are stored and existing authorization consents are queried.
+
+`OAuth2AuthorizationConsentService` 是存储新授权同意和查询现有授权同意的中心组件。
+
+It is primarily used by components that implement an OAuth2 authorization request flow – for example, the `authorization_code` grant.
+
+它主要由实现 OAuth2 授权请求流的组件使用——例如，authorization_code 授权。
+
+The provided implementations of `OAuth2AuthorizationConsentService` are `InMemoryOAuth2AuthorizationConsentService` and `JdbcOAuth2AuthorizationConsentService`. 
 
 `OAuth2AuthorizationConsentService` 提供的实现是 `InMemoryOAuth2AuthorizationConsentService` 和 `JdbcOAuth2AuthorizationConsentService`。 
 
