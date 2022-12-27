@@ -385,7 +385,11 @@ public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity h
 
 # OAuth2TokenContext
 
+An `OAuth2TokenContext` is a context object that holds information associated with an `OAuth2Token` and is used by an `OAuth2TokenGenerator` and `OAuth2TokenCustomizer`.
+
 `OAuth2TokenContext` 是一个上下文对象，它保存与 `OAuth2Token` 关联的信息，并由 `OAuth2TokenGenerator` 和 `OAuth2TokenCustomizer` 使用。
+
+`OAuth2TokenContext` provides the following accessors:
 
 OAuth2TokenContext 提供以下访问器：
 
@@ -428,14 +432,36 @@ public interface OAuth2TokenContext extends Context {
 
 7. `getAuthorizationGrantType()`：与授权授予关联的 `AuthorizationGrantType`。
 
-8 . `getAuthorizationGrant()`：处理授权授予的 `AuthenticationProvider` 使用的 `Authentication` 实例。
+8. `getAuthorizationGrant()`：处理授权授予的 `AuthenticationProvider` 使用的 `Authentication` 实例。
 
+1. `getRegisteredClient()`: The RegisteredClient associated with the authorization grant.
+2. `getPrincipal()`: The Authentication instance of the resource owner (or client).
+3. `getAuthorizationServerContext()`: The AuthorizationServerContext object that holds information of the Authorization Server runtime environment.
+4. `getAuthorization()`: The OAuth2Authorization associated with the authorization grant.
+5. `getAuthorizedScopes()`: The scope(s) authorized for the client.
+6. `getTokenType()`: The OAuth2TokenType to generate. The supported values are code, access_token, refresh_token, and id_token.
+7. `getAuthorizationGrantType()`: The AuthorizationGrantType associated with the authorization grant.
+8. `getAuthorizationGrant()`: The Authentication instance used by the AuthenticationProvider that processes the authorization grant.
 
 # OAuth2TokenGenerator
 
+An `OAuth2TokenGenerator` is responsible for generating an `OAuth2Token` from the information contained in the provided `OAuth2TokenContext`.
+
 `OAuth2TokenGenerator` 负责从提供的 `OAuth2TokenContext` 中包含的信息生成 `OAuth2Token`。
 
+The `OAuth2Token` generated primarily depends on the type of `OAuth2TokenType` specified in the `OAuth2TokenContext`.
+
 生成的 `OAuth2Token` 主要取决于 `OAuth2TokenContext` 中指定的 `OAuth2TokenType` 的类型。
+
+For example, when the value for `OAuth2TokenType` is:
+
+- `code`, then OAuth2AuthorizationCode is generated.
+
+- `access_token`, then OAuth2AccessToken is generated.
+
+- `refresh_token`, then OAuth2RefreshToken is generated.
+
+- `id_token`, then OidcIdToken is generated.
 
 例如，当 `OAuth2TokenType` 的值为：
 
@@ -447,15 +473,27 @@ public interface OAuth2TokenContext extends Context {
 
 - `id_token`，然后生成`OidcIdToken`。
 
+Furthermore, the format of the generated `OAuth2AccessToken` varies, depending on the `TokenSettings.getAccessTokenFormat()` configured for the `RegisteredClient`. 
+
 此外，生成的`OAuth2AAccessToken`的格式是不同的，取决于为`RegisteredClient`配置的`TokenSettings.getAccessTokenFormat()`。
+
+If the format is `OAuth2TokenFormat.SELF_CONTAINED` (the default), then a Jwt is generated. 
 
 如果格式是`OAuth2TokenFormat.SELF_CONTAINED`（默认），那么就会生成一个`Jwt`。
 
+If the format is `OAuth2TokenFormat.REFERENCE`, then an "opaque" token is generated.
+
 如果格式是`OAuth2TokenFormat.REFERENCE`，那么就会生成一个 "不透明 "的令牌。
+
+Finally, if the generated `OAuth2Token` has a set of claims and implements `ClaimAccessor`, the claims are made accessible from `OAuth2Authorization.Token.getClaims()`.
 
 最后，如果生成的`OAuth2Token`有一组claims，并且实现了`ClaimAccessor`，那么索赔就可以从`OAuth2Authorization.Token.getClaims()`中获得。
 
+The `OAuth2TokenGenerator` is primarily used by components that implement authorization grant processing – for example, `authorization_code`, `client_credentials`, and `refresh_token`.
+
 `OAuth2TokenGenerator`主要由实现授权授予处理的组件使用--例如，`authorization_code`、`client_credentials`和`refresh_token`。
+
+The provided implementations are `OAuth2AccessTokenGenerator`, `OAuth2RefreshTokenGenerator`, and `JwtGenerator`. The `OAuth2AccessTokenGenerator` generates an "opaque" (`OAuth2TokenFormat.REFERENCE`) access token, and the `JwtGenerator` generates a Jwt (`OAuth2TokenFormat.SELF_CONTAINED`).
 
 提供的实现是`OAuth2AccessTokenGenerator`、`OAuth2RefreshTokenGenerator`和`JwtGenerator`。`OAuth2AccessTokenGenerator`生成一个 "不透明的"（`OAuth2TokenFormat.REFERENCE`）访问令牌，而`JwtGenerator`生成一个`Jwt（OAuth2TokenFormat.SELF_CONTAINED）`。
 
@@ -466,9 +504,11 @@ public interface OAuth2TokenContext extends Context {
 > Note
 > 如果注册了 JwtEncoder @Bean 或 JWKSource<SecurityContext> @Bean，则在 DelegatingOAuth2TokenGenerator 中额外组合了一个 JwtGenerator。
 
+The `OAuth2TokenGenerator` provides great flexibility, as it can support any custom token format for `access_token` and `refresh_token`.
 
 `OAuth2TokenGenerator` 提供了极大的灵活性，因为它可以支持 `access_token` 和 `refresh_token` 的任何自定义令牌格式。
 
+The following example shows how to register an `OAuth2TokenGenerator` `@Bean`:
 
 以下示例显示如何注册 `OAuth2TokenGenerator` `@Bean`：
 
@@ -483,6 +523,8 @@ public OAuth2TokenGenerator<?> tokenGenerator() {
 			jwtGenerator, accessTokenGenerator, refreshTokenGenerator);
 }
 ```
+
+Alternatively, you can configure the `OAuth2TokenGenerator` through the `OAuth2AuthorizationServerConfigurer`:
 
 或者，您可以通过 `OAuth2AuthorizationServerConfigurer` 配置 `OAuth2TokenGenerator`：
 
@@ -502,15 +544,27 @@ public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity h
 }
 ```
 
+>The `OAuth2AuthorizationServerConfigurer` is useful when applying multiple configuration options simultaneously.
+
 # OAuth2TokenCustomizer
+
+An `OAuth2TokenCustomizer` provides the ability to customize the attributes of an `OAuth2Token`, which are accessible in the provided `OAuth2TokenContext`.
 
 `OAuth2TokenCustomizer` 提供了自定义 `OAuth2Token` 属性的能力，这些属性可在提供的 `OAuth2TokenContext` 中访问。 
 
+It is used by an `OAuth2TokenGenerator` to let it customize the attributes of the `OAuth2Token` before it is generated.
+
 `OAuth2TokenGenerator` 使用它来让它在生成 `OAuth2Token` 之前自定义它的属性。
+
+An `OAuth2TokenCustomizer<OAuth2TokenClaimsContext>` declared with a generic type of `OAuth2TokenClaimsContext` (implements `OAuth2TokenContext`) provides the ability to customize the claims of an "opaque" `OAuth2AccessToken`.
 
 使用通用类型 `OAuth2TokenClaimsContext`（实现 `OAuth2TokenContext`）声明的 `OAuth2TokenCustomizer<OAuth2TokenClaimsContext>` 提供了自定义“不透明”`OAuth2AccessToken` 声明的能力。 
 
+`OAuth2TokenClaimsContext.getClaims()` provides access to the `OAuth2TokenClaimsSet.Builder`, allowing the ability to add, replace, and remove claims.
+
 `OAuth2TokenClaimsContext.getClaims()` 提供对 `OAuth2TokenClaimsSet.Builder` 的访问，允许添加、替换和删除声明。
+
+The following example shows how to implement an `OAuth2TokenCustomizer<OAuth2TokenClaimsContext>` and configure it with an `OAuth2AccessTokenGenerator`:
 
 以下示例显示了如何实现 `OAuth2TokenCustomizer<OAuth2TokenClaimsContext>` 并使用 `OAuth2AccessTokenGenerator` 对其进行配置：
 
@@ -540,11 +594,19 @@ public OAuth2TokenCustomizer<OAuth2TokenClaimsContext> accessTokenCustomizer() {
 > 如果 OAuth2TokenGenerator 未作为 @Bean 提供或未通过 OAuth2AuthorizationServerConfigurer 配置，则 OAuth2TokenCustomizer<OAuth2TokenClaimsContext> @Bean 将自动配置 OAuth2AccessTokenGenerator。
 
 
+An `OAuth2TokenCustomizer<JwtEncodingContext>` declared with a generic type of `JwtEncodingContext` (implements `OAuth2TokenContext`) provides the ability to customize the headers and claims of a `Jwt`. 
+
 使用通用类型的 `JwtEncodingContext`（实现 `OAuth2TokenContext`）声明的 `OAuth2TokenCustomizer<JwtEncodingContext>` 提供了自定义 `Jwt` 的标头和声明的能力。 
+
+`JwtEncodingContext.getHeaders()` provides access to the `JwsHeader.Builder`, allowing the ability to add, replace, and remove headers. 
 
 `JwtEncodingContext.getHeaders()` 提供对 `JwsHeader.Builder` 的访问，允许添加、替换和删除标头。 
 
+`JwtEncodingContext.getClaims()` provides access to the `JwtClaimsSet.Builder`, allowing the ability to add, replace, and remove claims.
+
 `JwtEncodingContext.getClaims()` 提供对 `JwtClaimsSet.Builder` 的访问，允许添加、替换和删除声明。
+
+The following example shows how to implement an `OAuth2TokenCustomizer<JwtEncodingContext>` and configure it with a `JwtGenerator`:
 
 以下示例显示了如何实现 `OAuth2TokenCustomizer<JwtEncodingContext>` 并使用 `JwtGenerator` 对其进行配置：
 
@@ -576,7 +638,8 @@ public OAuth2TokenCustomizer<JwtEncodingContext> jwtCustomizer() {
 }
 ```
 
-# 协议端点
+>If the `OAuth2TokenGenerator` is not provided as a `@Bean` or is not configured through the `OAuth2AuthorizationServerConfigurer`, an `OAuth2TokenCustomizer<JwtEncodingContext>` `@Bean` will automatically be configured with a `JwtGenerator`.
+
 
 
 
