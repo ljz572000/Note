@@ -387,4 +387,8 @@ cache user就是缓冲使用次数
 
 25. 如何保证数据库和缓存双写一致性？
 
+https://juejin.cn/post/6964531365643550751
+
+https://zhuanlan.zhihu.com/p/490902522
+
 
