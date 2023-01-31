@@ -1,0 +1,70 @@
+# MVCC 是什么 (Multi-Version Concurrency Control)
+
+一致性非锁定读，也可以叫多版本并发控制
+
+MySQL基于自己的回滚机制，为并发场景下的读操作，做的读取的一个优化。
+
+回滚机制，也就是我们MySQL里边的undo log
+
+举例：
+
+A、B线程为修改程序，C为读取线程
+
+A和C线程同时向一条数据发起了写和读的操作。但是C线程sleep, A 线程去修改数据。生成一版快照，修改之前的快照。Ax线程修改完提交。
+
+B线程来了，B线程要生成一个快照。
+
+那一共几个快照？ 一共三个快照
+A 线程之前的版本
+A 线程修改完成后的版本
+B 线程修改完成后的版本
+
+这个时候C 线程醒了。那请问C线程访问的是哪部分数据
+
+读取的是最原始的那部分数据，A线程修改之前的数据   发起事务时，最原始的快照 
+
+这个是我们一个默认隔离级别下，C线程读取的快照版本。
+
+当前模式没有违背事务的隔离性
+
+# MVCC在read committed 下面的表现
+
+read committed 是我们MySQL的第二个隔离级别，读取提交数据
+
+还是刚才的那个示例。那肯定是B线程提交的版本咯。
+
+当前模式违背事务的隔离性, 会造成幻读（前后两次读取的条数不一样）和不可重复读（前后两次读取的价格不一样）。
+
+# MVCC在read uncommitted 下面的表现
+
+无所谓多版本控制，脏读，
+
+几乎碰不到脏读的情况。
+
+# MVCC在serial 下面的表现
+
+读写都会进行锁定。串行的。只为安全。
+
+> 数据库事务必须具备ACID特性，ACID是Atomic（原子性）、Consistency（一致性）、Isolation（隔离性）和Durability（持久性）的英文缩写。
+
+# 锁如何解决这些问题
+
+InnoDB存储引擎实现了如下两种标准的行级锁：
+
+❑共享锁（S Lock），允许事务读一行数据。
+
+❑排他锁（X Lock），允许事务删除或更新一行数据。 作者：河北王校长 https://www.bilibili.com/read/cv15138919?spm_id_from=333.999.0.0 出处：bilibili
+
+## InnoDB存储引擎有3种行锁的算法
+
+锁有三种算法
+
+- Record Lock，记录锁，也就是仅仅把一条记录锁上；
+
+- Gap Lock，间隙锁，锁定一个范围，但是不包含记录本身；
+
+- Next-Key Lock：Record Lock + Gap Lock 的组合，锁定一个范围，并且锁定记录本身(移步专栏)
+
+https://www.bilibili.com/read/cv15138919?spm_id_from=333.999.0.0
+
+【【干货+面经】mysql第三弹，锁的部分配合专栏看下哈】https://www.bilibili.com/video/?vd_source=d5f66d6ea135eb07f5c98a18594180d3
