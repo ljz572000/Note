@@ -3,9 +3,13 @@
 生成1<=n<=10 之间的数字
 
 ```python
+
 import random
-index = random.randint(1,10)
-index
+
+if __name__ == '__main__':
+
+    print("Index {}".format( random.randint(1,10) ))
+
 ```
 
 # numpy 库
@@ -16,12 +20,18 @@ index
 * list中的数据类型保存的是数据的存放的地址，简单的说就是指针，并非数据
 
 ```python
+
 import numpy as np
-alist = [1,2,3]
-blist = ['1',2,3]
-aarry = np.array(alist)
-barry = np.array(blist)
-aarry,barry
+
+if __name__ == '__main__':
+    a_list = [1, 2, 3]
+    b_list = ['1', 2, 3]
+    a_array = np.array(a_list)
+    b_array = np.array(b_list)
+    print("a_array {}".format( a_array ))
+    print("b_array {}".format( b_array ))
+
+
 # (array([1, 2, 3]), array(['1', '2', '3'], dtype='<U1'))
 ```
 
@@ -31,8 +41,11 @@ aarry,barry
 
 ```python
 import numpy as np
-labels = np.empty(5)
-labels
+
+if __name__ == '__main__':
+    labels = np.empty(5)
+    print("a_array {}".format( labels ))
+
 # array([9.66111301e-312, 9.73175853e-315, 9.66209334e-312, 9.66219724e-312,
 #       8.90104239e-307])
 ```
@@ -42,9 +55,11 @@ labels
 生成零矩阵
 
 ```python
-import numpy as np 
-a = np.zeros(4)
-a
+import numpy as np
+
+if __name__ == '__main__':
+    a = np.zeros(4)
+    print("zero array {}".format( a ))
 # array([0., 0., 0., 0.])
 ```
 
