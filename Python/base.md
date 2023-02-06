@@ -40,6 +40,94 @@ https://zhuanlan.zhihu.com/p/267966140
 2. 利用同步的方式去实现异步
 3. 不再需要锁，提高了并发性能
 
+# zip()
+
+更正式地说： zip() 返回元组的迭代器，其中 i -该元组包含 i -每个论点中的第个元素都是可接受的。
+
+```python
+# -*- coding: utf-8 -*-
+
+if __name__ == '__main__':
+    for item in zip([1, 2, 3], ['sugar', 'spice', 'everything nice']):
+        print(item)
+```
+
+# Python元组和列表的区别
+
+http://c.biancheng.net/view/4363.html
+
+元组和列表最大的区别就是，列表中的元素可以进行任意修改
+
+```python
+# -*- coding: utf-8 -*-
+
+if __name__ == '__main__':
+    listDemo = []
+    tupleDemo = ()
+    print("list size {}", listDemo.__sizeof__())
+    print("tuple size {}", tupleDemo.__sizeof__())
+```
+
+可以看到，对于列表和元组来说，虽然它们都是空的，但元组却比列表少占用 16 个字节，这是为什么呢？
+
+事实上，就是由于列表是动态的，它需要存储指针来指向对应的元素（占用 8 个字节）。另外，由于列表中元素可变，所以需要额外存储已经分配的长度大小（占用 8 个字节）。但是对于元组，情况就不同了，元组长度大小固定，且存储元素不可变，所以存储空间也是固定的。
+
+即元组要比列表更加轻量级，所以从总体上来说，**元组的性能速度要由于列表**。
+
+另外，Python 会在后台，对静态数据做一些资源缓存。通常来说，因为垃圾回收机制的存在，如果一些变量不被使用了，Python 就会回收它们所占用的内存，返还给操作系统，以便其他变量或其他应用使用。
+
+但是对于一些静态变量（比如元组），如果它不被使用并且占用空间不大时，Python 会暂时缓存这部分内存。这样的话，当下次再创建同样大小的元组时，Python 就可以不用再向操作系统发出请求去寻找内存，而是可以直接分配之前缓存的内存空间，这样就能大大加快程序的运行速度。
+
+```
+list size {} 40
+tuple size {} 24
+```
+
+#  python范围和名称空间
+
+这个 global 语句可用于指示特定变量在全局范围内，并应在全局范围内反弹；
+
+语句 nonlocal 语句指示特定变量位于封闭范围内，并应在该范围内反弹。
+
+```python
+# -*- coding: utf-8 -*-
+
+def scope_test():
+    def do_local():
+        spam = "local spam"
+
+    def do_nonlocal():
+        nonlocal spam
+        spam = "nonlocal spam"
+
+    def do_global():
+        global spam
+        spam = "global spam"
+
+    spam = "test spam"
+    do_local()
+    print("After local assignment:", spam)
+    do_nonlocal()
+    print("After nonlocal assignment:", spam)
+    do_global()
+    print("After global assignment:", spam)
+
+
+scope_test()
+print("In global scope:", spam)
+```
+
+```python
+After local assignment: test spam
+After nonlocal assignment: nonlocal spam
+After global assignment: nonlocal spam
+In global scope: global spam
+```
+
+# python也支持多重继承的形式
+
+
+
 # 电子书
 
 * [人生苦短，我用python](https://www.cnblogs.com/derek1184405959/p/8579428.html) - zhang_derek *(内含丰富的笔记以及各类教程)*
