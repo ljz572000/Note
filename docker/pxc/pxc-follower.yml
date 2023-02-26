@@ -1,0 +1,48 @@
+version: '3'
+services:
+  pxc02:
+    restart: always
+    image: percona/percona-xtradb-cluster:5.7
+    container_name: pxc02
+    privileged: true
+    ports:
+      - 3307:3306
+    env_file:
+      - pxc.env
+    environment:
+      - CLUSTER_JOIN=pxc01
+    volumes:
+      - pxc02data:/var/lib/mysql
+      - backup:/data
+    networks:
+      - mysql_network
+
+
+  pxc03:
+    restart: always
+    image: percona/percona-xtradb-cluster:5.7
+    container_name: pxc03
+    privileged: true
+    ports:
+      - 3308:3306
+    env_file:
+      - pxc.env
+    environment:
+      - CLUSTER_JOIN=pxc01
+    volumes:
+      - pxc03data:/var/lib/mysql
+      - backup:/data
+    networks:
+      - mysql_network
+
+volumes:
+  pxc02data:
+      driver: local
+  pxc03data:
+      driver: local
+  backup:
+      driver: local
+
+networks:
+  mysql_network:
+    external: true

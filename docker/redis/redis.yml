@@ -1,0 +1,20 @@
+version: '3.7'
+services:
+    redis:
+        container_name: ricky-redis
+        image: redis:7.0.4
+        restart: always
+        ports: 
+          - "6379:6379"
+        volumes:
+          - ./redis.conf:/usr/local/etc/redis/redis.conf
+          - redis_data:/data
+          - redis_logs:/logs
+        command:
+          /bin/bash -c "redis-server /usr/local/etc/redis/redis.conf "
+
+volumes:
+  redis_logs:
+    driver: local
+  redis_data:
+    driver: local

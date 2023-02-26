@@ -1,0 +1,30 @@
+version: '3.3'
+services:
+  skywalking-oap:
+    image: apache/skywalking-oap-server:9.2.0
+    container_name: skywalking-oap
+    volumes:
+      - oap_conf:/skywalking/config
+    ports:
+      - "11800:11800"
+      - "12800:12800"
+    environment:
+      TZ: Asia/Shanghai
+      SW_STORAGE: h2
+
+  skywalking-ui:
+    image: apache/skywalking-ui:9.2.0
+    container_name: skywalking-ui
+    depends_on:
+      - skywalking-oap
+    links:
+      - skywalking-oap
+    ports:
+      - "8080:8080"
+    environment:
+      TZ: Asia/Shanghai
+      SW_OAP_ADDRESS: http://skywalking-oap:12800
+      
+volumes:
+  oap_conf:
+    driver: local

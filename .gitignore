@@ -1,0 +1,5 @@
+*.log
+docker/rocketmq/data/broker/logs/*
+docker/rocketmq/data/broker/store/*
+docker/nacos/standalone-logs/*
+docker/nacos/mysql/*

@@ -1,0 +1,24 @@
+version: "3.7"
+services:
+  mysql:
+    container_name: ricky-mysql
+    image: mysql:5.7.36
+    restart: always
+    ports:
+      - "3306:3306"
+    env_file:
+      - mysqlpassword.env
+    command: 
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysqlData:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost" ]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+
+volumes:
+  mysqlData:
+    driver: local

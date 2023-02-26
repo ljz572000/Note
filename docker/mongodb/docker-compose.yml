@@ -1,0 +1,33 @@
+# Use root/example as user/password credentials
+version: '3.1'
+
+services:
+
+  mongo:
+    container_name: ricky-mongo
+    image: mongo:6.0.1
+    restart: always
+    ports:
+      - 27017:27017
+    volumes:
+      - mongo_db:/data/db
+      - mongo_log:/var/log/mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: ljz-ljz001
+
+  mongo-express:
+    image: mongo-express
+    restart: always
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ljz-ljz001
+      ME_CONFIG_MONGODB_URL: mongodb://root:ljz-ljz001@mongo:27017/
+      
+volumes:
+  mongo_db:
+    driver: local
+  mongo_log:
+    driver: local

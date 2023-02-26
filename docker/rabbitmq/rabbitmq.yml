@@ -1,0 +1,18 @@
+version: '3.7'
+services:
+    rabbitmq:
+        container_name: ricky-rabbitmq
+        image: rabbitmq:3.9.13-management
+        restart: always
+        hostname: rickyRabbitmq
+        ports: 
+          - "15672:15672"
+          - "5672:5672"
+        env_file:
+          - rabbitmq-password.env
+        volumes:
+          - rabbitmq_data:/var/lib/rabbitmq
+          
+volumes:
+  rabbitmq_data:
+    driver: local

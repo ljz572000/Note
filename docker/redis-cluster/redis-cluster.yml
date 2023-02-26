@@ -1,0 +1,131 @@
+version: '3.7'
+
+services:
+  redis6379:
+    image: redis:6.2.7
+    container_name: redis6379
+    command:
+      ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    volumes:
+      - ./6379/conf/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./6379/data:/data
+    ports:
+      - "6379:6379"
+      - "16379:16379"
+    environment:
+      # 设置时区为上海，否则时间会有问题
+      - TZ=Asia/Shanghai
+    logging:
+      options:
+        max-size: '100m'
+        max-file: '10'
+    networks:
+      - redis_network
+
+  redis6380:
+    image: redis:6.2.7
+    container_name: redis6380
+    command:
+      ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    volumes:
+      - ./6380/conf/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./6380/data:/data
+    ports:
+      - "6380:6380"
+      - "16380:16380"
+    environment:
+      # 设置时区为上海，否则时间会有问题
+      - TZ=Asia/Shanghai
+    logging:
+      options:
+        max-size: '100m'
+        max-file: '10'
+    networks:
+      - redis_network
+
+  redis6381:
+    image: redis:6.2.7
+    container_name: redis6381
+    command:
+      ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    volumes:
+      - ./6381/conf/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./6381/data:/data
+    ports:
+      - "6381:6381"
+      - "16381:16381"
+    environment:
+      # 设置时区为上海，否则时间会有问题
+      - TZ=Asia/Shanghai
+    logging:
+      options:
+        max-size: '100m'
+        max-file: '10'
+    networks:
+      - redis_network
+
+  redis6382:
+    image: redis:6.2.7
+    container_name: redis6382
+    command:
+      ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    volumes:
+      - ./6382/conf/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./6382/data:/data
+    ports:
+      - "6382:6382"
+      - "16382:16382"
+    environment:
+      # 设置时区为上海，否则时间会有问题
+      - TZ=Asia/Shanghai
+    logging:
+      options:
+        max-size: '100m'
+        max-file: '10'
+    networks:
+      - redis_network
+
+  redis6383:
+    image: redis:6.2.7
+    container_name: redis6383
+    command:
+      ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    volumes:
+      - ./6383/conf/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./6383/data:/data
+    ports:
+      - "6383:6383"
+      - "16383:16383"
+    environment:
+      # 设置时区为上海，否则时间会有问题
+      - TZ=Asia/Shanghai
+    logging:
+      options:
+        max-size: '100m'
+        max-file: '10'
+    networks:
+      - redis_network
+
+  redis6384:
+    image: redis:6.2.7
+    container_name: redis6384
+    command:
+      ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    volumes:
+      - ./6384/conf/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./6384/data:/data
+    ports:
+      - "6384:6384"
+      - "16384:16384"
+    environment:
+      # 设置时区为上海，否则时间会有问题
+      - TZ=Asia/Shanghai
+    logging:
+      options:
+        max-size: '100m'
+        max-file: '10'
+    networks:
+      - redis_network
+networks:
+  redis_network:
+    external: true

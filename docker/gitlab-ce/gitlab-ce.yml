@@ -1,0 +1,22 @@
+version: '3.7'
+services:
+    gitlab-ce:
+        container_name: ricky-gitlab-ce
+        image: gitlab/gitlab-ce:13.12.3-ce.0
+        restart: always
+        ports: 
+          - "443:433"
+          - "80:80"
+          - "22:22"
+        volumes:
+          - gitlab_home_config:/etc/gitlab
+          - gitlab_home_logs:/var/log/gitlab
+          - gitlab_home_data:/var/opt/gitlab
+          
+volumes:
+  gitlab_home_config:
+    driver: local
+  gitlab_home_logs:
+    driver: local
+  gitlab_home_data:
+    driver: local
